@@ -1,6 +1,6 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-30 03:52 IST
+Last updated: 2026-10-30 03:55 IST
 Coordinator: `/root`
 Status: In progress
 
@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-750 | In progress | 2026-10-30 03:52 IST | Memory presentation, concise grouping, regression coverage and production validation |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-750 | Completed | 2026-10-30 03:55 IST | Human-readable memory translation, concise grouping, regression coverage and authenticated production validation |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
 | A-AI | LLM generation and personalization engineer | Inherited primary model — requested Astra override unavailable | T-300 | Completed | 2026-10-29 12:06 IST | `src/lib/ai/**`, `src/lib/learning/**`; 19 focused tests passed |
@@ -130,7 +130,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-720 | Deduplicated contextual memory ranking | A-FRANK | Inherited primary | T-700 | Completed | Goal/tone/topic/recency ranking, conflict/dedup/diversity, bounded prompt context | 20 focused learning/prompt tests, lint and typecheck passed |
 | T-730 | Reliable feedback UI loop | A-FUI | Inherited primary | T-700 | Completed | Pending/success/error states, selected/saved toggles, edit and rejection UX | 5 focused component tests, lint and diff check passed |
 | T-740 | Feedback integration, migration, validation and deploy | A-ROOT | Primary | T-710, T-720, T-730 | Completed | Integrated API/UI/generation path and production rollout | Full check, remote migration verification, READY deployment, browser and protected-endpoint smoke passed |
-| T-750 | Human-readable memory page | A-ROOT | Primary | T-740 | In progress | Concise grouped memory UI, meaningful evidence labels, before/after edits and hidden low-information records | Presentation tests, component tests, full check and browser QA |
+| T-750 | Human-readable memory page | A-ROOT | Primary | T-740 | Completed | Concise grouped memory UI, meaningful evidence labels, before/after edits and hidden low-information records | 7 focused tests; full 20-file/97-test check; authenticated production browser QA and clean console |
 
 ## D. Dependency and execution plan
 
@@ -176,6 +176,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 
 | D-011 | Separate current feedback state, append-only audit events, and stable-key learning memories | Disable buttons only, append one memory per click | Makes retries idempotent, preserves analytics, prevents repeated clicks from multiplying learning weight, and supports undo | A-ROOT | 2026-10-30 |
 | D-012 | Deterministic contextual ranking without mandatory embedding calls | Dump all memories, always call embeddings | Goal/tone/topic/recency ranking plus diversity is explainable and cheap; optional embeddings can be added later without blocking generation | A-ROOT | 2026-10-30 |
+| D-013 | Present memory by user meaning, not storage kind | One card per raw memory row | Grouping examples, rewrites, preferences and avoid rules makes the learning loop understandable; exact source events preserve labels for legacy memories | A-ROOT | 2026-10-30 |
 
 ## F. Risks and blockers
 
@@ -213,6 +214,8 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 - Contextual memory selection is deterministic and free of embedding calls: goal, tone, topic, recency, evidence, effectiveness, conflict and diversity produce a bounded context of at most eight memories and roughly 1,200 tokens.
 - Latest `npm run check`: ESLint, TypeScript, 18 test files/90 tests, and the Next.js production build passed. The feedback v2 migration is applied to production Supabase and the new state/audit tables are present.
 - Feedback v2 is live at `https://okara-eight.vercel.app`; Playwright loaded the production login surface, and unauthenticated feedback/generation requests correctly returned 401 rather than exposing data or accepting writes.
+- The production Memory page groups real signals into examples, preferences, rewrites, and avoid rules; it labels legacy records from their source events, shows exact before/after edits, marks one-edit conclusions as early signals, and omits records with no understandable content.
+- Latest `npm run check`: ESLint, TypeScript, 20 test files/97 tests, and the Next.js production build passed. Authenticated Chrome QA verified the live page with the user's real data and no console warnings or errors.
 
 ### Pending
 
@@ -258,6 +261,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-30 03:28 | Reconciled Supabase migration history without deleting schema objects, applied feedback v2 remotely, and verified `draft_feedback_state` and `generation_memory_links` in production. |
 | 2026-10-30 03:31 | Deployed commit `c38077a` to Vercel production. The deployment reached READY; live login returned 200, protected feedback/generation routes returned 401 unauthenticated, and Playwright verified the production login document. T-740 completed. |
 | 2026-10-30 03:52 | Started T-750 after reviewing the production screenshot. Scoped the redesign to replace internal memory-kind cards with compact, human-readable insights, signal labels, and exact before/after edits; unrelated workspace changes will remain untouched. |
+| 2026-10-30 03:55 | T-750 completed and deployed in commit `265bba4`. Authenticated production QA showed 3 action-labeled examples, 1 evidence-labeled preference, and 1 exact rewrite; the console was clean and the full 20-file/97-test release check passed. |
 
 ## Standard agent completion report contract
 
