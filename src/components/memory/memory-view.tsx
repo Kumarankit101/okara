@@ -49,6 +49,11 @@ function scopeKey(scope: MemoryScope) {
   return scope.type === "global" ? "global" : `voice:${scope.voiceProfileId}`;
 }
 
+function preferredScope(memories: MemoryRecord[]) {
+  const global = memories.find((memory) => memory.scope.type === "global");
+  return global ? "global" : memories[0] ? scopeKey(memories[0].scope) : "global";
+}
+
 function scopeInput(scope: MemoryScope) {
   return scope.type === "global"
     ? { type: "global" as const }
@@ -223,7 +228,7 @@ export function MemoryView() {
   const [removed, setRemoved] = useState<RemovedPreference | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("global");
   const [scopeMemory, setScopeMemory] = useState<MemoryRecord | null>(null);
   const [moveTarget, setMoveTarget] = useState("");
   const [copyTargets, setCopyTargets] = useState<string[]>([]);
@@ -237,12 +242,12 @@ export function MemoryView() {
           profiles?: VoiceProfile[];
           memories: MemoryRecord[];
         };
-        setMemories(
-          payload.memories.map((memory) => ({
-            ...memory,
-            scope: memory.scope ?? { type: "global", label: "All voices" },
-          })),
-        );
+        const normalizedMemories = payload.memories.map((memory) => ({
+          ...memory,
+          scope: memory.scope ?? ({ type: "global", label: "All voices" } as const),
+        }));
+        setMemories(normalizedMemories);
+        setFilter(preferredScope(normalizedMemories));
         setProfiles(payload.profiles ?? []);
       } catch {
         setFailed(true);
@@ -270,13 +275,19 @@ export function MemoryView() {
       profiles?: VoiceProfile[];
       memories: MemoryRecord[];
     };
-    setMemories(
-      payload.memories.map((memory) => ({
-        ...memory,
-        scope: memory.scope ?? { type: "global", label: "All voices" },
-      })),
-    );
-    setProfiles(payload.profiles ?? []);
+    const normalizedMemories = payload.memories.map((memory) => ({
+      ...memory,
+      scope: memory.scope ?? ({ type: "global", label: "All voices" } as const),
+    }));
+    const refreshedProfiles = payload.profiles ?? [];
+    setMemories(normalizedMemories);
+    setFilter((current) => {
+      const currentStillExists =
+        current === "global" ||
+        refreshedProfiles.some((profile) => `voice:${profile.id}` === current);
+      return currentStillExists ? current : preferredScope(normalizedMemories);
+    });
+    setProfiles(refreshedProfiles);
   }
 
   function scopeFromKey(key: string): MemoryScope | null {
@@ -319,6 +330,7 @@ export function MemoryView() {
       });
       if (!response.ok) throw new Error("Preference update failed");
       await refreshMemories();
+      if (action === "move" && target) setFilter(scopeKey(target));
       setScopeMemory(null);
       setStatus(
         action === "move"
@@ -411,9 +423,7 @@ export function MemoryView() {
     );
   }
 
-  const visibleMemories = memories.filter(
-    (memory) => filter === "all" || scopeKey(memory.scope) === filter,
-  );
+  const visibleMemories = memories.filter((memory) => scopeKey(memory.scope) === filter);
   const examples = visibleMemories.filter((memory) => memory.category === "example");
   const edits = visibleMemories.filter((memory) => memory.category === "edit");
   const insights = visibleMemories.filter((memory) => memory.category === "insight");
@@ -461,7 +471,6 @@ export function MemoryView() {
 
       <nav aria-label="Filter preferences by where they apply" className="flex gap-2 overflow-x-auto pb-1">
         {[
-          ["all", "All"],
           ["global", "Global"],
           ...profiles.map((profile) => [`voice:${profile.id}`, profile.displayName]),
         ].map(([value, label]) => (
@@ -499,6 +508,15 @@ export function MemoryView() {
           </div>
         ))}
       </section>
+
+      {!visibleMemories.length && (
+        <div className="rounded-2xl border border-dashed border-line px-5 py-10 text-center">
+          <h2 className="text-sm font-semibold">No preferences in this scope yet</h2>
+          <p className="mt-1 text-xs leading-5 text-muted">
+            Move or copy a preference here from another voice.
+          </p>
+        </div>
+      )}
 
       {insights.length > 0 && (
         <section aria-labelledby="memory-preferences" className="space-y-3">

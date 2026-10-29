@@ -155,8 +155,10 @@ describe("MemoryView", () => {
 
     render(<MemoryView />);
     expect(await screen.findByText("Global · All voices")).toBeTruthy();
-    expect(screen.getByText("Voice · Founder")).toBeTruthy();
+    expect(screen.queryByText("Voice · Founder")).toBeNull();
+    expect(screen.queryByRole("button", { name: "All" })).toBeNull();
     await user.click(screen.getByRole("button", { name: "Founder" }));
+    expect(screen.getByText("Voice · Founder")).toBeTruthy();
     expect(screen.getByText("Founder only", { exact: false })).toBeTruthy();
     expect(screen.queryByText("Works everywhere", { exact: false })).toBeNull();
     await user.click(screen.getByRole("button", { name: "Global" }));
