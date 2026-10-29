@@ -6,7 +6,7 @@ import { Brand } from "@/components/brand";
 const navigation = [
   { href: "/dashboard", label: "Write", icon: PenLine },
   { href: "/history", label: "History", icon: History },
-  { href: "/memory", label: "Memory", icon: Sparkles },
+  { href: "/preferences", label: "Preferences", icon: Sparkles },
   { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 

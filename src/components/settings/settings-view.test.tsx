@@ -28,7 +28,9 @@ describe("SettingsView", () => {
     expect(screen.getByDisplayValue("Writer")).toBeTruthy();
     expect(screen.getByText("writer@example.com")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Delete voice" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Review learned preferences" })).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Review learned preferences" }).getAttribute("href"),
+    ).toBe("/preferences");
     expect(screen.getByRole("button", { name: "Sign out" })).toBeTruthy();
   });
 });

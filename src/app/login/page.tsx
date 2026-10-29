@@ -36,7 +36,7 @@ export default async function LoginPage({
               <LockKeyhole className="size-5" />
             </div>
             <h1 className="mt-3 text-2xl font-semibold tracking-[-0.045em] sm:mt-4 sm:text-3xl [@media(max-width:767px)_and_(max-height:740px)]:mt-1 [@media(max-width:767px)_and_(max-height:740px)]:text-lg [@media(max-width:767px)_and_(max-height:740px)]:leading-[1.4]">
-              Your writing memory is private.
+              Your writing preferences are private.
             </h1>
             <p className="mt-2 text-sm leading-6 text-muted sm:text-base [@media(max-width:767px)_and_(max-height:740px)]:hidden">
               Save voice profiles, drafts, edits, and preferences to your private workspace.

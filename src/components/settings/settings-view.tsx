@@ -217,7 +217,7 @@ export function SettingsView({
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
-              href="/memory"
+              href="/preferences"
               className="rounded-xl border px-3 py-2 text-sm font-bold text-forest hover:bg-ink/5"
             >
               Review learned preferences

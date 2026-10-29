@@ -1,3 +1,6 @@
+import { z } from "zod";
+
+import { apiError } from "@/lib/http/api-response";
 import { routeErrorResponse } from "@/lib/http/route-error";
 import { presentMemory } from "@/lib/learning/memory-presentation";
 import { requireUser, type Json } from "@/lib/supabase";
@@ -8,6 +11,11 @@ function contentRecord(value: Json): Record<string, unknown> {
     ? (value as Record<string, unknown>)
     : {};
 }
+
+const preferenceStateSchema = z.object({
+  memoryId: z.string().uuid(),
+  active: z.boolean(),
+});
 
 export async function GET() {
   try {
@@ -49,12 +57,37 @@ export async function GET() {
             : content;
 
         return presentMemory(memory.kind, presentationContent).map((presentation, index) => ({
-            id: `${memory.id}:${index}`,
-            ...presentation,
-            createdAt: memory.created_at,
+          id: `${memory.id}:${index}`,
+          memoryId: memory.id,
+          ...presentation,
+          createdAt: memory.created_at,
         }));
       }),
     });
+  } catch (error) {
+    return routeErrorResponse(error);
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const user = await requireUser();
+    const input = preferenceStateSchema.parse(await request.json());
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("preference_memories")
+      .update({ active: input.active })
+      .eq("id", input.memoryId)
+      .eq("user_id", user.id)
+      .select("id,active")
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) {
+      return apiError(404, "PREFERENCE_NOT_FOUND", "That writing preference no longer exists.");
+    }
+
+    return Response.json({ memoryId: data.id, active: data.active });
   } catch (error) {
     return routeErrorResponse(error);
   }

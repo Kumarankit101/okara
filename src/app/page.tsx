@@ -115,7 +115,7 @@ export default function Home() {
         {[
           ["01", "Bring a voice", "Use an authorized X handle or paste writing samples you own."],
           ["02", "Shape the idea", "Add the point, audience, and outcome. Okara creates five distinct angles."],
-          ["03", "Teach by choosing", "Select, edit, save, or reject. Your decisions become private writing memory."],
+          ["03", "Teach by choosing", "Select, edit, save, or reject. Your decisions become private writing preferences."],
         ].map(([number, title, body]) => (
           <div key={number} className="border-t border-ink/20 pt-5">
             <span className="font-mono text-xs font-semibold text-forest">{number}</span>
@@ -128,7 +128,7 @@ export default function Home() {
       <footer className="border-t border-line px-5 py-8 sm:px-8">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 text-sm text-muted sm:flex-row">
           <Brand className="opacity-80" />
-          <p>Original drafts. Explicit feedback. Private memory.</p>
+          <p>Original drafts. Explicit feedback. Private preferences.</p>
         </div>
       </footer>
     </main>
