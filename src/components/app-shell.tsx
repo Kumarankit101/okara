@@ -1,7 +1,7 @@
 import { History, LogOut, PenLine, Settings2, Sparkles } from "lucide-react";
-import Link from "next/link";
 
 import { Brand } from "@/components/brand";
+import { NavigationLink } from "@/components/navigation/navigation-link";
 
 const navigation = [
   { href: "/dashboard", label: "Write", icon: PenLine },
@@ -19,14 +19,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Brand />
             <nav className="flex items-center gap-1 lg:mt-10 lg:block lg:space-y-1">
               {navigation.map(({ href, label, icon: Icon }) => (
-                <Link
+                <NavigationLink
                   key={href}
                   href={href}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-muted transition hover:bg-ink/5 hover:text-ink"
+                  label={label}
                 >
                   <Icon className="size-4" />
                   <span className="hidden sm:inline">{label}</span>
-                </Link>
+                </NavigationLink>
               ))}
             </nav>
           </div>
