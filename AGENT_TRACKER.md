@@ -1,0 +1,225 @@
+# AGENT_TRACKER
+
+Last updated: 2026-10-29 12:12 IST
+Coordinator: `/root`
+Status: In progress
+
+This file is the single source of truth for project execution. Only the coordinator edits it. Agents report structured completion results to the coordinator, who verifies evidence and records updates here.
+
+## A. Project overview
+
+### Product
+
+Okara is a private AI writing workspace for creators, founders, marketers, and social-media teams. A signed-in user supplies an X handle or authorized writing samples, enters a topic or rough brief, and receives five editable X-post drafts inspired by the source writing patterns. The product improves for that user through explicit selections, edits, saves, copies, likes, dislikes, and rejection reasons.
+
+### Final user-visible result
+
+- A responsive live Next.js application.
+- Login with Supabase Auth.
+- A dashboard for creating a voice profile from an X handle or pasted samples.
+- Five structured, editable drafts per generation.
+- Copy, save, select, edit, like/dislike, and rejection-reason feedback.
+- History and a visible “what the app learned” preference view.
+- Per-user persistence with data isolation.
+- Graceful handling of missing provider credentials and provider failures.
+
+### Architecture
+
+```text
+Browser
+  -> Next.js App Router on Vercel
+      -> Supabase Auth + Postgres + RLS
+      -> official X API v2 (optional credential; server-only)
+      -> OpenAI Responses API (server-only)
+      -> feedback memory retrieval and preference summarization
+```
+
+Server Components render authenticated data. Route Handlers own X/OpenAI provider calls. Server Actions or authenticated Route Handlers own small UI mutations. Provider libraries are isolated behind typed interfaces so they can be mocked in tests.
+
+### Technical constraints
+
+- Next.js App Router and TypeScript.
+- Real Postgres database through Supabase.
+- Real server-side OpenAI generation; no client-side secret exposure.
+- Supabase Auth and database Row Level Security.
+- Official X API only; no scraping or browser automation.
+- Raw fetched X text expires within 24 hours.
+- No fine-tuning on X data and no automatic posting in the MVP.
+- User-specific learning comes from explicit feedback and user-edited/final text.
+- All external inputs and structured model outputs are validated.
+- No agent may modify `AGENT_TRACKER.md`.
+
+### Assumptions
+
+- Primary users write in English initially, while the data model remains language-neutral.
+- Magic-link email is the required login method; Google OAuth is optional after the base flow works.
+- The app remains useful without X credentials through pasted, user-owned samples.
+- Five drafts and a 280-character default limit are the MVP contract.
+- `gpt-5.6-terra` with low reasoning is the default model because it is available to this OpenAI project; it remains configurable by environment.
+- The repository will be created under the authenticated GitHub account after validation.
+- Production deployment will use Vercel if authentication can be established.
+
+### Dependencies currently available
+
+- Node.js 24.6.0 and npm 11.5.1.
+- GitHub CLI authenticated as `Kumarankit101` with repository scope.
+- Supabase dashboard authenticated; CLI keychain access is unavailable and no project is linked yet.
+- `OPENAI_API_KEY` is present in the execution environment.
+
+### Missing information or credentials
+
+- No X API bearer token is available. Official handle ingestion cannot be validated against live X until supplied.
+- Vercel CLI is installed but logged out. Local implementation and GitHub publication can proceed.
+- GitHub repository visibility was not specified; default assumption is private until deployment handoff unless changed by the user.
+- Public-handle voice derivation remains subject to X policy confirmation. The pasted-sample path is the compliance-safe fallback.
+
+### Overall acceptance criteria
+
+1. A user can authenticate and cannot access another user’s rows.
+2. A user can create a voice profile from at least three pasted samples.
+3. With an X token, a valid public handle can create a profile through the official API; without it, the UI gives an actionable fallback.
+4. A signed-in user can submit a brief and receive exactly five distinct drafts from a server-side OpenAI call.
+5. Every draft is validated, persisted, editable, and limited to the configured character count.
+6. Feedback and final edits are persisted and influence later prompt context for the same user/profile only.
+7. History and learned preferences survive a new session.
+8. Secrets are absent from browser bundles and logs.
+9. Type checking, linting, unit/integration tests, and production build pass.
+10. Database migrations and RLS allow/deny behavior are validated.
+11. The app is deployed and smoke-tested if external deployment credentials are available; otherwise the exact blocker and deployment commands are documented.
+
+## B. Agent registry
+
+| Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
+|---|---|---|---|---|---|---|
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-400, T-500, T-600 | In progress | 2026-10-29 12:20 IST | `AGENT_TRACKER.md`, shared contracts, app shell, integrated product |
+| A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
+| A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
+| A-AI | LLM generation and personalization engineer | Inherited primary model — requested Astra override unavailable | T-300 | Completed | 2026-10-29 12:06 IST | `src/lib/ai/**`, `src/lib/learning/**`; 19 focused tests passed |
+| A-REVIEW | Independent release reviewer | Inherited primary model | T-500 review | Completed | 2026-10-29 12:08 IST | Seven P1 findings reported; no files modified |
+| A-SEC | Redirect hardening reviewer/fixer | Inherited primary model | T-510 | Completed | 2026-10-29 12:09 IST | Redirect sanitizer and 9 focused tests |
+| A-UX | Workspace UX hardening | Inherited primary model | T-520 | Completed | 2026-10-29 12:09 IST | Explicit authorization, add-voice reset, stable idempotency key |
+| A-API | API persistence/idempotency/quota hardening | Inherited primary model | T-530 | Completed | 2026-10-29 12:11 IST | Generation replay, quotas, persistence checks, 7 focused tests |
+
+## C. Task board
+
+| Task ID | Task | Owner | Model | Dependencies | Status | Deliverable | Validation |
+|---|---|---|---|---|---|---|---|
+| T-000 | Discovery and requirements baseline | A-ROOT | Primary | None | Completed | `PLAN.md`, tracker overview | Workspace, CLI, and credential inventory recorded |
+| T-010 | Next.js foundation and shared contracts | A-ROOT | Primary | T-000 | Completed | App scaffold, dependencies, shared types/env/error contracts | Install complete; initial typecheck/lint pass; contract tests configured |
+| T-100 | Supabase Auth, schema, migrations, and RLS | A-DATA | Inherited primary | T-010 | Completed | Schema, RLS, clients, types, auth callback/signout and proxy | Typecheck/lint/build passed; 5 tests; 19 SQL assertions authored; local DB run pending Docker |
+| T-200 | X ingestion and pasted-source normalization | A-X | Inherited primary | T-010 | Completed | Official X client, normalization, typed errors, expiry, tests in `src/lib/x/**` | 18 tests; targeted ESLint and diff check passed; live token validation pending |
+| T-300 | OpenAI generation and learning engine | A-AI | Inherited primary | T-010 | Completed | Responses provider, prompts, style/draft generation, memory ranking and feedback logic | Typecheck/lint passed; 19 focused tests; live smoke pending integration |
+| T-400 | Product UI and cross-component integration | A-ROOT | Primary | T-100, T-200, T-300 interfaces | Completed | Login, dashboard, drafts, history, learned-preferences UI and API routes | Desktop/mobile Playwright QA; production build passed |
+| T-500 | System validation and hardening | A-ROOT with A-REVIEW/A-SEC/A-UX/A-API | Primary | T-100, T-200, T-300, T-400 | Completed locally | Review findings fixed; quotas, idempotency, persistence checks, cleanup job | `npm run check`: 10 files, 60 tests, lint/typecheck/build pass; RLS runtime pending |
+| T-510 | Redirect hardening | A-SEC | Primary | T-500 review | Completed | Hardened `sanitizeRedirectPath` | 9 focused tests, lint/typecheck pass |
+| T-520 | Authorization and retry UX | A-UX | Primary | T-500 review | Completed | Explicit consent, working add-voice flow, stable UUID request key | Lint/typecheck/diff pass; browser QA pending authenticated environment |
+| T-530 | Generation/feedback API hardening | A-API | Primary | T-500 review | Completed | Safe replay, quotas, verified persistence | Full check passed; residual transaction/concurrency caveats tracked |
+| T-600 | GitHub, Supabase, Vercel, README, delivery | A-ROOT | Primary | T-500 | In progress | Repo URL, live URL if credentials permit, README | GitHub and production smoke test pending external setup |
+
+## D. Dependency and execution plan
+
+```text
+T-000 Discover
+   -> T-010 Foundation/contracts
+       -> [T-100 Data/Auth || T-200 X ingestion || T-300 AI/Learning]
+           -> T-400 UI/integration (incremental as contracts land)
+               -> T-500 Full validation/hardening
+                   -> T-600 Publish/deploy/report
+```
+
+### Parallel group 1
+
+T-100, T-200, and T-300 run concurrently after T-010 establishes directories, dependencies, and shared contracts. Their file ownership is disjoint.
+
+### Critical path
+
+T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration are on the critical path because every persistent product flow depends on them.
+
+### Interface contracts
+
+- Shared domain types live in `src/lib/contracts/` and are coordinator-owned after T-010.
+- Agents may import but must not change another agent’s owned files.
+- Provider functions return typed success/error results and do not render UI.
+- All route handlers authenticate and validate input before paid work.
+- Database table names and ownership fields follow `PLAN.md` section 9.
+
+## E. Decision log
+
+| ID | Decision | Alternatives | Rationale/trade-off | Owner | Date |
+|---|---|---|---|---|---|
+| D-001 | Supabase Auth + Postgres | Auth.js + Neon, SQLite | One service supplies auth, RLS, and managed Postgres; lower integration overhead | A-ROOT | 2026-10-29 |
+| D-002 | OpenAI Responses API with Structured Outputs | Chat Completions, free-form JSON | Current official API direction and reliable schema adherence | A-ROOT | 2026-10-29 |
+| D-003 | `gpt-5.6-terra` low by default | GPT-6.1 Terra, Sol, Luna | GPT-6.1 was denied for this project; 5.6 Terra is accessible, supports Responses/Structured Outputs, and passed a live smoke call | A-ROOT | 2026-10-29 |
+| D-004 | Retrieval-based learning | Immediate fine-tuning | Works from few examples, reversible, auditable, excludes X-derived training | A-ROOT | 2026-10-29 |
+| D-005 | Draft-only MVP | Direct X posting | Lower policy and abuse risk; keeps user review in the loop | A-ROOT | 2026-10-29 |
+| D-006 | Pasted samples are first-class | X-only onboarding | Keeps product functional without X credentials and provides an owned-content path | A-ROOT | 2026-10-29 |
+| D-007 | 23-hour source expiry plus hourly authenticated cleanup | Unscheduled TTL only, daily cleanup | Leaves cleanup headroom below the 24-hour ceiling and makes deletion operational | A-ROOT | 2026-10-29 |
+| D-008 | Database-count MVP quotas | Redis limiter immediately | Adds meaningful early spend protection without another service; replace with atomic reservations at scale | A-API/A-ROOT | 2026-10-29 |
+
+## F. Risks and blockers
+
+| ID | Description and impact | Owner | Mitigation | Status |
+|---|---|---|---|---|
+| R-001 | Missing X bearer token prevents live X validation | A-ROOT | Implement/test with mocks and provide pasted samples; request token only when required for live acceptance | Open |
+| R-002 | Public-handle style use may conflict with X policy | A-ROOT | Official API only, 24-hour raw cache, no X fine-tuning, release policy review, ownership/authorization language | Open; release gate |
+| R-003 | Vercel CLI is logged out | A-ROOT | Complete Vercel login or use a scoped deployment token after Supabase is ready | Open; deployment blocker |
+| R-004 | Concurrent agents may conflict | A-ROOT | Disjoint file ownership; coordinator owns shared contracts, package files, tracker, and integration | Mitigated by process |
+| R-005 | Provider spend or duplicate calls | A-AI/A-X/A-API | Per-user quotas, safe idempotency replay, usage records, bounded retries; atomic reservation remains a scale gate | Mitigated for MVP |
+| R-006 | Cross-user data leakage | A-DATA | Forced RLS and ownership checks; pgTAP suite authored but must run against real Postgres | Code mitigated; runtime validation pending |
+| R-007 | Model output is malformed or unsafe | A-AI | Structured Outputs, Zod revalidation, factuality instructions, refusal/error handling | Mitigated; live structured smoke passed |
+| R-008 | Supabase CLI keychain access unavailable | A-ROOT | Use authenticated dashboard project flow; user confirmation required before creating persistent credentials | Open; confirmation requested |
+| R-009 | Feedback writes are not transactional and quota checks are not atomic | A-ROOT | Fail visibly now; add Postgres RPC transactions and atomic quota reservations before high volume | Open scale gate; not MVP blocker |
+
+## G. Integration and quality status
+
+### Completed
+
+- Architecture, scalability plan, Next.js application, Supabase schema/RLS, auth wiring, official X client, pasted fallback, OpenAI generation, retrieval learning, UI, history, memory, feedback, quotas, idempotency, scheduled cleanup, and README.
+- Official OpenAI documentation review for Responses API, Structured Outputs, and `gpt-5.6-terra`.
+- Real OpenAI structured-output smoke: completed with 2 drafts; 90 input and 68 output tokens.
+- `npm run check`: ESLint passed, TypeScript passed, 10 test files/60 tests passed, production build passed.
+- Playwright desktop/mobile public-page QA and graceful missing-config login error handling.
+
+### Pending
+
+- Create/link production Supabase project, apply migration, and run pgTAP/RLS checks.
+- Configure Supabase Auth redirect URLs.
+- GitHub publication and Vercel production deployment.
+- Live X validation requires a bearer token; pasted samples remain operational without it.
+
+## H. Activity log
+
+| Timestamp (IST) | Event |
+|---|---|
+| 2026-10-29 12:00 | T-000 completed: inspected workspace, Git, Node/npm, CLIs, and credential names without exposing secret values. |
+| 2026-10-29 12:00 | Confirmed authenticated GitHub and Supabase CLI access; no linked project, X token, or Vercel CLI. |
+| 2026-10-29 12:00 | Reviewed official OpenAI documentation for Structured Outputs and `gpt-6.1-terra`. |
+| 2026-10-29 12:00 | Initialized central tracker and defined disjoint parallel workstreams. |
+| 2026-10-29 12:20 | T-010 completed: scaffolded Next.js 16 App Router, installed runtime/test dependencies, and established coordinator-owned domain/environment/HTTP contracts. |
+| 2026-10-29 12:20 | Assigned T-100, T-200, and T-300 for parallel execution with disjoint file ownership. |
+| 2026-10-29 12:25 | Explicit Astra and Sol agent launches were rejected because this project lacks those model entitlements; no task work ran under those attempts. Relaunched all three agents using the inherited primary model, the strongest available option. |
+| 2026-10-29 12:05 | T-200 completed and reviewed at report level: official X client, bounded retry/timeout, safe errors, normalization, dedupe, pasted fallback, and bounded expiry. Evidence: 18 focused tests and targeted lint passed. Live X validation remains blocked by R-001. |
+| 2026-10-29 12:06 | T-300 completed: Responses API Structured Outputs, five-draft validation, safe prompt design, provider error mapping, and user/profile-scoped retrieval learning. Evidence: typecheck/lint and 19 focused tests passed. |
+| 2026-10-29 12:07 | T-100 completed: eight-table schema, ownership FKs, forced RLS, minimal grants, auth SSR clients/routes/proxy, types, and cleanup. Evidence: typecheck/lint/build and 5 tests passed; 19 pgTAP assertions authored but not executed because local Docker/Postgres is unavailable. |
+| 2026-10-29 12:08 | T-400 integration completed: authenticated shell, login, workspace, five-draft UI, history, memory, and route handlers integrated. |
+| 2026-10-29 12:08 | Real OpenAI smoke succeeded with `gpt-5.6-terra`; default changed after GPT-6.1 access returned 403. |
+| 2026-10-29 12:09 | Independent release review found no P0 and seven P1 issues; assigned disjoint hardening tasks immediately. |
+| 2026-10-29 12:11 | Hardening completed: redirect defenses, explicit authorization, working add-voice flow, stable request IDs, replay-safe idempotency, per-user quotas, persistence verification, and scheduled source cleanup. |
+| 2026-10-29 12:11 | Full release check passed: ESLint, TypeScript, 10 test files/60 tests, and Next.js production build. |
+| 2026-10-29 12:12 | Playwright verified desktop and 390px mobile landing layouts plus graceful login configuration error. Supabase dashboard project creation is staged pending required user confirmation for persistent credentials. |
+
+## Standard agent completion report contract
+
+Every agent must return exactly these sections:
+
+1. **Summary** — what was accomplished.
+2. **Deliverables** — exact files and artifacts produced.
+3. **Implementation details** — important decisions and changes.
+4. **Validation** — commands/tests run, results, and evidence.
+5. **Assumptions** — decisions made due to missing information.
+6. **Issues and risks** — blockers, unresolved questions, and limitations.
+7. **Dependencies** — information required by other workstreams.
+8. **Next steps** — remaining work or coordinator actions.
+9. **Status** — completed, blocked, or failed.
+
+An agent may not claim completion without deliverables and validation evidence. It must report blockers rather than silently substituting a materially different solution.
