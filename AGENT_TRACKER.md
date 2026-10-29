@@ -56,7 +56,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 - The app remains useful without X credentials through pasted, user-owned samples.
 - Five drafts and a 280-character default limit are the MVP contract.
 - `gpt-5.6-terra` with low reasoning is the default model because it is available to this OpenAI project; it remains configurable by environment.
-- The repository will be created under the authenticated GitHub account after validation.
+- The repository is private at `https://github.com/Kumarankit101/okara`.
 - Production deployment will use Vercel if authentication can be established.
 
 ### Dependencies currently available
@@ -114,7 +114,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-510 | Redirect hardening | A-SEC | Primary | T-500 review | Completed | Hardened `sanitizeRedirectPath` | 9 focused tests, lint/typecheck pass |
 | T-520 | Authorization and retry UX | A-UX | Primary | T-500 review | Completed | Explicit consent, working add-voice flow, stable UUID request key | Lint/typecheck/diff pass; browser QA pending authenticated environment |
 | T-530 | Generation/feedback API hardening | A-API | Primary | T-500 review | Completed | Safe replay, quotas, verified persistence | Full check passed; residual transaction/concurrency caveats tracked |
-| T-600 | GitHub, Supabase, Vercel, README, delivery | A-ROOT | Primary | T-500 | In progress | Repo URL, live URL if credentials permit, README | GitHub and production smoke test pending external setup |
+| T-600 | GitHub, Supabase, Vercel, README, delivery | A-ROOT | Primary | T-500 | In progress | Private repo published; live URL pending; README complete | GitHub verified; production smoke test pending external setup |
 
 ## D. Dependency and execution plan
 
@@ -184,7 +184,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 
 - Create/link production Supabase project, apply migration, and run pgTAP/RLS checks.
 - Configure Supabase Auth redirect URLs.
-- GitHub publication and Vercel production deployment.
+- Supabase production setup and Vercel production deployment.
 - Live X validation requires a bearer token; pasted samples remain operational without it.
 
 ## H. Activity log
@@ -207,6 +207,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-29 12:11 | Hardening completed: redirect defenses, explicit authorization, working add-voice flow, stable request IDs, replay-safe idempotency, per-user quotas, persistence verification, and scheduled source cleanup. |
 | 2026-10-29 12:11 | Full release check passed: ESLint, TypeScript, 10 test files/60 tests, and Next.js production build. |
 | 2026-10-29 12:12 | Playwright verified desktop and 390px mobile landing layouts plus graceful login configuration error. Supabase dashboard project creation is staged pending required user confirmation for persistent credentials. |
+| 2026-10-29 12:12 | Created private GitHub repository and pushed `main`: `https://github.com/Kumarankit101/okara`. Production deployment remains blocked only on Supabase project confirmation and Vercel authentication. |
 
 ## Standard agent completion report contract
 
