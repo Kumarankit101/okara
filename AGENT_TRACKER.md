@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-400, T-500, T-600 | In progress | 2026-10-29 12:20 IST | `AGENT_TRACKER.md`, shared contracts, app shell, integrated product |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-400, T-500, T-600 | Completed | 2026-10-29 12:36 IST | `AGENT_TRACKER.md`, shared contracts, app shell, integrated product, production deployment |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
 | A-AI | LLM generation and personalization engineer | Inherited primary model — requested Astra override unavailable | T-300 | Completed | 2026-10-29 12:06 IST | `src/lib/ai/**`, `src/lib/learning/**`; 19 focused tests passed |
@@ -106,15 +106,15 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 |---|---|---|---|---|---|---|---|
 | T-000 | Discovery and requirements baseline | A-ROOT | Primary | None | Completed | `PLAN.md`, tracker overview | Workspace, CLI, and credential inventory recorded |
 | T-010 | Next.js foundation and shared contracts | A-ROOT | Primary | T-000 | Completed | App scaffold, dependencies, shared types/env/error contracts | Install complete; initial typecheck/lint pass; contract tests configured |
-| T-100 | Supabase Auth, schema, migrations, and RLS | A-DATA | Inherited primary | T-010 | Completed | Schema, RLS, clients, types, auth callback/signout and proxy | Typecheck/lint/build passed; 5 tests; 19 SQL assertions authored; local DB run pending Docker |
+| T-100 | Supabase Auth, schema, migrations, and RLS | A-DATA | Inherited primary | T-010 | Completed | Schema, RLS, clients, types, auth callback/signout and proxy | Typecheck/lint/build passed; 5 tests; production tables, forced RLS, and policies verified remotely |
 | T-200 | X ingestion and pasted-source normalization | A-X | Inherited primary | T-010 | Completed | Official X client, normalization, typed errors, expiry, tests in `src/lib/x/**` | 18 tests; targeted ESLint and diff check passed; live token validation pending |
-| T-300 | OpenAI generation and learning engine | A-AI | Inherited primary | T-010 | Completed | Responses provider, prompts, style/draft generation, memory ranking and feedback logic | Typecheck/lint passed; 19 focused tests; live smoke pending integration |
+| T-300 | OpenAI generation and learning engine | A-AI | Inherited primary | T-010 | Completed | Responses provider, prompts, style/draft generation, memory ranking and feedback logic | Typecheck/lint passed; 19 focused tests; live structured-output smoke passed |
 | T-400 | Product UI and cross-component integration | A-ROOT | Primary | T-100, T-200, T-300 interfaces | Completed | Login, dashboard, drafts, history, learned-preferences UI and API routes | Desktop/mobile Playwright QA; production build passed |
-| T-500 | System validation and hardening | A-ROOT with A-REVIEW/A-SEC/A-UX/A-API | Primary | T-100, T-200, T-300, T-400 | Completed locally | Review findings fixed; quotas, idempotency, persistence checks, cleanup job | `npm run check`: 10 files, 60 tests, lint/typecheck/build pass; RLS runtime pending |
+| T-500 | System validation and hardening | A-ROOT with A-REVIEW/A-SEC/A-UX/A-API | Primary | T-100, T-200, T-300, T-400 | Completed | Review findings fixed; quotas, idempotency, persistence checks, cleanup job | `npm run check`: 10 files, 60 tests, lint/typecheck/build pass; production RLS and smoke checks pass |
 | T-510 | Redirect hardening | A-SEC | Primary | T-500 review | Completed | Hardened `sanitizeRedirectPath` | 9 focused tests, lint/typecheck pass |
 | T-520 | Authorization and retry UX | A-UX | Primary | T-500 review | Completed | Explicit consent, working add-voice flow, stable UUID request key | Lint/typecheck/diff pass; browser QA pending authenticated environment |
 | T-530 | Generation/feedback API hardening | A-API | Primary | T-500 review | Completed | Safe replay, quotas, verified persistence | Full check passed; residual transaction/concurrency caveats tracked |
-| T-600 | GitHub, Supabase, Vercel, README, delivery | A-ROOT | Primary | T-500 | In progress | Private repo published; live URL pending; README complete | GitHub verified; production smoke test pending external setup |
+| T-600 | GitHub, Supabase, Vercel, README, delivery | A-ROOT | Primary | T-500 | Completed | Private repo, production Supabase, live Vercel app, README | Public pages 200; protected APIs 401 unauthenticated; deploy READY |
 
 ## D. Dependency and execution plan
 
@@ -153,8 +153,9 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | D-004 | Retrieval-based learning | Immediate fine-tuning | Works from few examples, reversible, auditable, excludes X-derived training | A-ROOT | 2026-10-29 |
 | D-005 | Draft-only MVP | Direct X posting | Lower policy and abuse risk; keeps user review in the loop | A-ROOT | 2026-10-29 |
 | D-006 | Pasted samples are first-class | X-only onboarding | Keeps product functional without X credentials and provides an owned-content path | A-ROOT | 2026-10-29 |
-| D-007 | 23-hour source expiry plus hourly authenticated cleanup | Unscheduled TTL only, daily cleanup | Leaves cleanup headroom below the 24-hour ceiling and makes deletion operational | A-ROOT | 2026-10-29 |
+| D-007 | 23-hour source expiry plus hourly Supabase Cron cleanup | Vercel Cron, unscheduled TTL only, daily cleanup | Preserves the 24-hour retention ceiling on free hosting and keeps deletion close to the data | A-ROOT | 2026-10-29 |
 | D-008 | Database-count MVP quotas | Redis limiter immediately | Adds meaningful early spend protection without another service; replace with atomic reservations at scale | A-API/A-ROOT | 2026-10-29 |
+| D-009 | Supabase Cron for hourly retention cleanup | Hourly Vercel Cron, daily Vercel Hobby Cron | Vercel Hobby rejects hourly schedules; database-local cron preserves hourly cleanup without a paid web-host plan | A-ROOT | 2026-10-29 |
 
 ## F. Risks and blockers
 
@@ -162,12 +163,12 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 |---|---|---|---|---|
 | R-001 | Missing X bearer token prevents live X validation | A-ROOT | Implement/test with mocks and provide pasted samples; request token only when required for live acceptance | Open |
 | R-002 | Public-handle style use may conflict with X policy | A-ROOT | Official API only, 24-hour raw cache, no X fine-tuning, release policy review, ownership/authorization language | Open; release gate |
-| R-003 | Vercel CLI is logged out | A-ROOT | Complete Vercel login or use a scoped deployment token after Supabase is ready | Open; deployment blocker |
+| R-003 | Vercel CLI is logged out | A-ROOT | Browser device login completed without macOS keychain access | Resolved |
 | R-004 | Concurrent agents may conflict | A-ROOT | Disjoint file ownership; coordinator owns shared contracts, package files, tracker, and integration | Mitigated by process |
 | R-005 | Provider spend or duplicate calls | A-AI/A-X/A-API | Per-user quotas, safe idempotency replay, usage records, bounded retries; atomic reservation remains a scale gate | Mitigated for MVP |
-| R-006 | Cross-user data leakage | A-DATA | Forced RLS and ownership checks; pgTAP suite authored but must run against real Postgres | Code mitigated; runtime validation pending |
+| R-006 | Cross-user data leakage | A-DATA | Forced RLS and ownership checks; all eight production tables verified with forced RLS and four ownership policies each | Mitigated and remotely verified |
 | R-007 | Model output is malformed or unsafe | A-AI | Structured Outputs, Zod revalidation, factuality instructions, refusal/error handling | Mitigated; live structured smoke passed |
-| R-008 | Supabase CLI keychain access unavailable | A-ROOT | Use authenticated dashboard project flow; user confirmation required before creating persistent credentials | Open; confirmation requested |
+| R-008 | Supabase CLI keychain access unavailable | A-ROOT | Used scoped, expiring token and authenticated CLI/dashboard flow; no login-keychain password required | Resolved |
 | R-009 | Feedback writes are not transactional and quota checks are not atomic | A-ROOT | Fail visibly now; add Postgres RPC transactions and atomic quota reservations before high volume | Open scale gate; not MVP blocker |
 
 ## G. Integration and quality status
@@ -179,13 +180,14 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 - Real OpenAI structured-output smoke: completed with 2 drafts; 90 input and 68 output tokens.
 - `npm run check`: ESLint passed, TypeScript passed, 10 test files/60 tests passed, production build passed.
 - Playwright desktop/mobile public-page QA and graceful missing-config login error handling.
+- Production Supabase project provisioned; eight tables, forced RLS, and policies verified; hourly cleanup job active.
+- Supabase Auth site/redirect URLs configured for `https://okara-eight.vercel.app`.
+- Vercel production deployment is READY; landing/login return 200 and protected APIs return 401 when unauthenticated.
 
 ### Pending
 
-- Create/link production Supabase project, apply migration, and run pgTAP/RLS checks.
-- Configure Supabase Auth redirect URLs.
-- Supabase production setup and Vercel production deployment.
 - Live X validation requires a bearer token; pasted samples remain operational without it.
+- Full authenticated magic-link journey awaits a user-owned test email; sending email was intentionally not automated.
 
 ## H. Activity log
 
@@ -208,6 +210,10 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-29 12:11 | Full release check passed: ESLint, TypeScript, 10 test files/60 tests, and Next.js production build. |
 | 2026-10-29 12:12 | Playwright verified desktop and 390px mobile landing layouts plus graceful login configuration error. Supabase dashboard project creation is staged pending required user confirmation for persistent credentials. |
 | 2026-10-29 12:12 | Created private GitHub repository and pushed `main`: `https://github.com/Kumarankit101/okara`. Production deployment remains blocked only on Supabase project confirmation and Vercel authentication. |
+| 2026-10-29 12:24 | Created and linked production Supabase project, applied the schema, and verified all eight tables have forced RLS with four ownership policies each. |
+| 2026-10-29 12:29 | Vercel Hobby rejected hourly cron; moved the job to Supabase Cron and verified `okara-delete-expired-source-posts` is active on `0 * * * *`. |
+| 2026-10-29 12:33 | Fixed cross-platform install by making the macOS Rolldown binding optional; full check passed again with 10 files and 60 tests. |
+| 2026-10-29 12:36 | Configured production auth URLs and deployed READY to `https://okara-eight.vercel.app`; public and unauthenticated protection smoke tests passed. |
 
 ## Standard agent completion report contract
 

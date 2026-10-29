@@ -2,6 +2,10 @@
 
 Okara is a private AI writing workspace that turns an X handle or user-provided writing samples into five editable post drafts. It learns from explicit feedback and the user's own edits, so later generations become more useful without training on fetched X content.
 
+**Live app:** [https://okara-eight.vercel.app](https://okara-eight.vercel.app)
+
+**Repository:** [https://github.com/Kumarankit101/okara](https://github.com/Kumarankit101/okara)
+
 ## Why this architecture
 
 - **Next.js App Router** keeps the UI, authenticated server rendering, and provider-facing route handlers in one deployable application.
@@ -59,7 +63,7 @@ npx supabase link --project-ref <project-ref>
 npx supabase db push
 ```
 
-Configure the Supabase Auth site URL as `http://localhost:3000` and add `http://localhost:3000/auth/callback` as a redirect URL. Then run:
+For local development, add `http://localhost:3000/auth/callback` to the Supabase Auth redirect allow-list without replacing the production site URL. Then run:
 
 ```bash
 npm run dev
@@ -77,7 +81,7 @@ This runs ESLint, TypeScript, the unit/integration test suite, and a production 
 
 - Provider secrets stay server-side.
 - Every persistent row is user-owned; RLS is enabled and forced.
-- Raw X samples receive a 23-hour expiry and an hourly authenticated cleanup job, leaving operational headroom under the 24-hour retention ceiling. They are not used for model training.
+- Raw X samples receive a 23-hour expiry and an hourly Supabase Cron cleanup job, leaving operational headroom under the 24-hour retention ceiling. They are not used for model training.
 - The app generates drafts only; it never posts automatically.
 - Prompt inputs are treated as untrusted data, and structured model output is revalidated with Zod.
 - Feedback memory is isolated by both `user_id` and `voice_profile_id` and bounded before prompt insertion.
@@ -92,6 +96,6 @@ The MVP runs synchronously and is appropriate for early usage. The data model an
 - [`AGENT_TRACKER.md`](./AGENT_TRACKER.md) — workstreams, agent roster, decisions, evidence, blockers, and integration status.
 - [`supabase/migrations`](./supabase/migrations) — production schema and RLS policies.
 
-## Current deployment prerequisites
+## Production deployment
 
-A production deployment requires a Supabase project plus Vercel authentication and environment variables. Set the same random `CRON_SECRET` in Vercel so its scheduled cleanup request is authenticated. Live X-handle validation additionally requires an X API bearer token; the pasted-sample path works without one.
+The application is deployed on Vercel at [okara-eight.vercel.app](https://okara-eight.vercel.app), backed by Supabase Auth/Postgres and server-side OpenAI calls. The checked-in database migration schedules source cleanup in Supabase Cron; `CRON_SECRET` remains available for authenticated manual cleanup calls. Live X-handle validation additionally requires an X API bearer token; the pasted-sample path works without one.
