@@ -57,6 +57,14 @@ const objectiveLabels: Record<Objective, string> = {
   entertain: "Entertain",
 };
 
+const toneLabels: Record<number, string> = {
+  1: "Restrained",
+  2: "Calm",
+  3: "Balanced",
+  4: "Confident",
+  5: "Bold",
+};
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
@@ -340,7 +348,7 @@ export function HistoryView() {
                     Goal: {objectiveLabels[detail.objective]}
                   </span>
                   <span className="rounded-full border border-line bg-surface px-3 py-1.5">
-                    Tone: {detail.toneIntensity}/5
+                    Tone: {toneLabels[detail.toneIntensity]}
                   </span>
                   <span className="rounded-full border border-line bg-surface px-3 py-1.5">
                     Limit: {detail.characterLimit}

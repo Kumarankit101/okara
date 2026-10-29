@@ -89,7 +89,8 @@ describe("HistoryView", () => {
     expect(await screen.findByRole("dialog")).toBeTruthy();
     expect(await screen.findByText("Feedback becomes useful when it changes the next draft.")).toBeTruthy();
     expect(screen.getByText("Goal: Educate")).toBeTruthy();
-    expect(screen.getByText("Tone: 4/5")).toBeTruthy();
+    expect(screen.getByText("Tone: Confident")).toBeTruthy();
+    expect(screen.queryByText("Tone: 4/5")).toBeNull();
     expect(screen.getByText("Keep it practical.")).toBeTruthy();
     expect(screen.getByText("Saved")).toBeTruthy();
     expect(
