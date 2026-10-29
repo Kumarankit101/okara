@@ -21,7 +21,7 @@ This is safer, cheaper, reversible, explainable, and useful with only a few inte
 |---|---|---|
 | Web app | Next.js App Router, TypeScript | Matches the requested stack and supports server-rendered pages plus server-only backend logic. |
 | UI | Tailwind CSS and a small component set | Fast to build, easy to keep visually consistent, no need for a heavy design system. |
-| Auth | Supabase Auth | Magic-link and Google login, secure cookie-based sessions, and direct integration with database authorization. |
+| Auth | Supabase Auth | Confirmed email/password plus magic-link login, secure cookie-based sessions, and direct integration with database authorization. |
 | Database | Supabase Postgres | A real managed Postgres database, migrations, backups, Row Level Security, and optional `pgvector`. |
 | X data | Official X API v2 | The supported path; no scraping or browser automation. |
 | LLM | OpenAI Responses API | Server-side text generation with Structured Outputs for reliable draft objects. |
@@ -89,7 +89,7 @@ The generation path should be synchronous for the MVP because the response is sm
 
 ## 5. Core user flow
 
-1. User signs in with a magic link or Google.
+1. User signs in with confirmed email/password or a magic link.
 2. User enters an X handle.
 3. The server normalizes the handle and resolves it through the official X API.
 4. The server fetches roughly 30 recent original posts, excluding reposts and usually excluding replies.

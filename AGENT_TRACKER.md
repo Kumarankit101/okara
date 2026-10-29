@@ -52,7 +52,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 ### Assumptions
 
 - Primary users write in English initially, while the data model remains language-neutral.
-- Magic-link email is the required login method; Google OAuth is optional after the base flow works.
+- Confirmed email/password and magic-link authentication are supported; Google OAuth remains optional.
 - The app remains useful without X credentials through pasted, user-owned samples.
 - Five drafts and a 280-character default limit are the MVP contract.
 - `gpt-5.6-terra` with low reasoning is the default model because it is available to this OpenAI project; it remains configurable by environment.
@@ -99,6 +99,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | A-SEC | Redirect hardening reviewer/fixer | Inherited primary model | T-510 | Completed | 2026-10-29 12:09 IST | Redirect sanitizer and 9 focused tests |
 | A-UX | Workspace UX hardening | Inherited primary model | T-520 | Completed | 2026-10-29 12:09 IST | Explicit authorization, add-voice reset, stable idempotency key |
 | A-API | API persistence/idempotency/quota hardening | Inherited primary model | T-530 | Completed | 2026-10-29 12:11 IST | Generation replay, quotas, persistence checks, 7 focused tests |
+| A-AUTH | Email/password auth implementation | Inherited primary model — requested `gpt-6.1-sol` unavailable | T-630 | Completed | 2026-10-29 17:44 IST | Password route, registration confirmation UX, safe callback errors, auth contracts/tests |
 
 ## C. Task board
 
@@ -117,6 +118,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-600 | GitHub, Supabase, Vercel, README, delivery | A-ROOT | Primary | T-500 | Completed | Private repo, production Supabase, live Vercel app, README | Public pages 200; protected APIs 401 unauthenticated; deploy READY |
 | T-610 | Settings route and account/data controls | A-ROOT | Primary | T-100, T-400 | Completed | Account details, voice deletion, privacy links, sign-out, responsive navigation | Lint/typecheck/build; 11 files/62 tests; Playwright verified protected route reaches sign-in instead of 404 |
 | T-620 | History-to-Write restoration | A-ROOT | Primary | T-300, T-400 | Completed | Durable run/draft deep links; restored voice, brief, constraints, latest edits and feedback state | Lint/typecheck/build; 13 files/64 tests pass |
+| T-630 | Email/password auth and registration confirmation | A-AUTH with A-ROOT review | Inherited primary | T-100, T-600 | Completed | Password sign-in/signup route, confirmation UX, magic-link fallback, safe auth errors, hosted password policy | Lint/typecheck/build; 16 files/74 tests; live invalid-input smoke pending deployment |
 
 ## D. Dependency and execution plan
 
@@ -158,6 +160,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | D-007 | 23-hour source expiry plus hourly Supabase Cron cleanup | Vercel Cron, unscheduled TTL only, daily cleanup | Preserves the 24-hour retention ceiling on free hosting and keeps deletion close to the data | A-ROOT | 2026-10-29 |
 | D-008 | Database-count MVP quotas | Redis limiter immediately | Adds meaningful early spend protection without another service; replace with atomic reservations at scale | A-API/A-ROOT | 2026-10-29 |
 | D-009 | Supabase Cron for hourly retention cleanup | Hourly Vercel Cron, daily Vercel Hobby Cron | Vercel Hobby rejects hourly schedules; database-local cron preserves hourly cleanup without a paid web-host plan | A-ROOT | 2026-10-29 |
+| D-010 | Supabase password auth with mandatory first-registration email confirmation | Custom password storage, password-only signup without verification | Reuses managed hashing/session cookies, preserves SSR auth, and verifies address ownership before first sign-in | A-AUTH/A-ROOT | 2026-10-29 |
 
 ## F. Risks and blockers
 
@@ -172,6 +175,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | R-007 | Model output is malformed or unsafe | A-AI | Structured Outputs, Zod revalidation, factuality instructions, refusal/error handling | Mitigated; live structured smoke passed |
 | R-008 | Supabase CLI keychain access unavailable | A-ROOT | Used scoped, expiring token and authenticated CLI/dashboard flow; no login-keychain password required | Resolved |
 | R-009 | Feedback writes are not transactional and quota checks are not atomic | A-ROOT | Fail visibly now; add Postgres RPC transactions and atomic quota reservations before high volume | Open scale gate; not MVP blocker |
+| R-010 | Supabase built-in SMTP only delivers test emails to organization members and has a low hourly limit | A-ROOT | Configure a custom SMTP provider before public signup; code maps delivery/rate failures to safe actionable errors | Open production launch blocker for arbitrary email addresses |
 
 ## G. Integration and quality status
 
@@ -185,11 +189,13 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 - Production Supabase project provisioned; eight tables, forced RLS, and policies verified; hourly cleanup job active.
 - Supabase Auth site/redirect URLs configured for `https://okara-eight.vercel.app`.
 - Vercel production deployment is READY; landing/login return 200 and protected APIs return 401 when unauthenticated.
+- Email/password sign-in and confirmation-gated registration are implemented alongside magic links; hosted password policy is enforced at 8+ characters with letters and numbers.
 
 ### Pending
 
 - Live X validation requires a bearer token; pasted samples remain operational without it.
 - Full authenticated magic-link journey awaits a user-owned test email; sending email was intentionally not automated.
+- Custom SMTP credentials are required before confirmation emails can reach arbitrary public addresses.
 
 ## H. Activity log
 
@@ -218,6 +224,8 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-29 12:36 | Configured production auth URLs and deployed READY to `https://okara-eight.vercel.app`; public and unauthenticated protection smoke tests passed. |
 | 2026-10-29 12:45 | Replaced the broken Settings link with a real protected route, account update API, cascade-backed voice deletion, data-retention guidance, and session controls. Local build and 62 tests passed; browser validation confirmed the route redirects unauthenticated users to sign-in rather than returning 404. |
 | 2026-10-29 12:59 | Added durable History-to-Write deep links. A clicked draft now restores the authorized generation, active voice, brief, goal, tone, limit, hashtag and correction controls, latest edited text, saved/selected state, all drafts, and focuses the selected draft. Added two UI regression tests; 64 tests pass. |
+| 2026-10-29 17:44 | Requested `gpt-6.1-sol` auth agent launch was rejected by project entitlement before work ran; relaunched A-AUTH on the strongest inherited model available. |
+| 2026-10-29 17:45 | Added email/password sign-in and confirmation-gated registration, retained magic links, surfaced safe callback/auth errors, and aligned hosted Supabase password policy to 8+ letters and numbers. Custom SMTP remains the public-email delivery blocker. |
 
 ## Standard agent completion report contract
 

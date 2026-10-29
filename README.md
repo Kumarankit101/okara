@@ -9,7 +9,7 @@ Okara is a private AI writing workspace that turns an X handle or user-provided 
 ## Why this architecture
 
 - **Next.js App Router** keeps the UI, authenticated server rendering, and provider-facing route handlers in one deployable application.
-- **Supabase Auth + Postgres + RLS** provides passwordless login, durable per-user data, and database-enforced isolation.
+- **Supabase Auth + Postgres + RLS** provides confirmed email/password and passwordless login, durable per-user data, and database-enforced isolation.
 - **OpenAI Responses API + Structured Outputs** returns a validated five-draft contract from a server-only call. The model is configurable and defaults to `gpt-5.6-terra` at low reasoning.
 - **Official X API v2 only** is used for handle ingestion. Pasted samples remain a first-class fallback when an X credential is unavailable or the user prefers owned content.
 - **Retrieval-based learning** stores explicit preferences, selected examples, rejection signals, and edit patterns. A small, ranked context is added to future prompts for the same user and voice profile. This is cheaper, reversible, and auditable compared with early fine-tuning.
@@ -25,7 +25,7 @@ Browser
 
 ## Product flow
 
-1. Sign in with a magic link.
+1. Sign in with email/password or a magic link. New password accounts must confirm their email first.
 2. Create a voice profile from an X handle or at least three pasted samples.
 3. Enter a topic, optional intent, and character limit.
 4. Receive exactly five distinct, editable drafts.
@@ -71,6 +71,8 @@ For local development, add `http://localhost:3000/auth/callback` to the Supabase
 npm run dev
 ```
 
+For password registration, keep Supabase **Confirm email** enabled and align the hosted password policy with `supabase/config.toml` (minimum 8 characters with letters and numbers). Public signup also requires custom SMTP; Supabase's built-in sender is limited to organization-member addresses and low test-volume delivery.
+
 ## Validation
 
 ```bash
@@ -100,4 +102,4 @@ The MVP runs synchronously and is appropriate for early usage. The data model an
 
 ## Production deployment
 
-The application is deployed on Vercel at [okara-eight.vercel.app](https://okara-eight.vercel.app), backed by Supabase Auth/Postgres and server-side OpenAI calls. The checked-in database migration schedules source cleanup in Supabase Cron; `CRON_SECRET` remains available for authenticated manual cleanup calls. Live X-handle validation additionally requires an X API bearer token; the pasted-sample path works without one.
+The application is deployed on Vercel at [okara-eight.vercel.app](https://okara-eight.vercel.app), backed by Supabase Auth/Postgres and server-side OpenAI calls. Email/password registration, confirmation-required first sign-in, and magic links are implemented; configure custom SMTP before opening registration to arbitrary public addresses. The checked-in database migration schedules source cleanup in Supabase Cron; `CRON_SECRET` remains available for authenticated manual cleanup calls. Live X-handle validation additionally requires an X API bearer token; the pasted-sample path works without one.

@@ -6,8 +6,19 @@ import { Brand } from "@/components/brand";
 import { LoginForm } from "@/components/auth/login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
+export const instant = false;
 
-export default function LoginPage() {
+const safeAuthErrors: Record<string, string> = {
+  missing_auth_code: "That sign-in link is incomplete. Request a new one and try again.",
+  auth_callback_failed: "That sign-in link is invalid, expired, or already used. Request a new one.",
+};
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   return (
     <main className="paper-grid relative grid min-h-screen place-items-center overflow-hidden px-5 py-12">
       <div className="absolute -left-32 top-20 size-96 rounded-full bg-accent/35 blur-3xl" />
@@ -30,7 +41,7 @@ export default function LoginPage() {
             Sign in to save voice profiles, drafts, edits, and preferences to your
             workspace.
           </p>
-          <LoginForm />
+          <LoginForm initialError={error ? safeAuthErrors[error] ?? "Sign-in could not be completed. Try again." : ""} />
         </section>
       </div>
     </main>
