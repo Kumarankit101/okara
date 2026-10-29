@@ -13,11 +13,22 @@ import {
   RotateCcw,
   Settings2,
   SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { MemoryCategory } from "@/lib/learning/memory-presentation";
+
+interface VoiceProfile {
+  id: string;
+  displayName: string;
+  handle: string | null;
+}
+
+type MemoryScope =
+  | { type: "global"; label: string }
+  | { type: "voice"; voiceProfileId: string; label: string };
 
 interface MemoryRecord {
   id: string;
@@ -31,6 +42,25 @@ interface MemoryRecord {
   after?: string;
   example?: string;
   createdAt: string;
+  scope: MemoryScope;
+}
+
+function scopeKey(scope: MemoryScope) {
+  return scope.type === "global" ? "global" : `voice:${scope.voiceProfileId}`;
+}
+
+function scopeInput(scope: MemoryScope) {
+  return scope.type === "global"
+    ? { type: "global" as const }
+    : { type: "voice" as const, voiceProfileId: scope.voiceProfileId };
+}
+
+function ScopeBadge({ scope }: { scope: MemoryScope }) {
+  return (
+    <span className="inline-flex w-fit rounded-full border border-forest/15 bg-accent-soft/60 px-2.5 py-1 text-[11px] font-semibold text-forest">
+      {scope.type === "global" ? "Global · All voices" : `Voice · ${scope.label}`}
+    </span>
+  );
 }
 
 interface RemovedPreference {
@@ -105,6 +135,46 @@ function StopUsingButton({
   );
 }
 
+function ManageScopeButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={`Manage scope for ${label}`}
+      onClick={onClick}
+      className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-forest transition hover:bg-accent-soft"
+    >
+      <SlidersHorizontal className="size-3.5" />
+      Manage scope
+    </button>
+  );
+}
+
+function ManageActions({
+  label,
+  memory,
+  pending,
+  onScope,
+  onStop,
+}: {
+  label: string;
+  memory: MemoryRecord;
+  pending: boolean;
+  onScope: (memory: MemoryRecord) => void;
+  onStop: (memoryId: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-1">
+      <ManageScopeButton label={label} onClick={() => onScope(memory)} />
+      <StopUsingButton
+        label={label}
+        memoryId={memory.memoryId}
+        pending={pending}
+        onStop={onStop}
+      />
+    </div>
+  );
+}
+
 function PreferenceNotice({
   removed,
   pending,
@@ -145,20 +215,35 @@ function PreferenceNotice({
 
 export function MemoryView() {
   const [memories, setMemories] = useState<MemoryRecord[]>([]);
+  const [profiles, setProfiles] = useState<VoiceProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [managing, setManaging] = useState(false);
   const [pendingMemoryId, setPendingMemoryId] = useState<string | null>(null);
   const [removed, setRemoved] = useState<RemovedPreference | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const [filter, setFilter] = useState("all");
+  const [scopeMemory, setScopeMemory] = useState<MemoryRecord | null>(null);
+  const [moveTarget, setMoveTarget] = useState("");
+  const [copyTargets, setCopyTargets] = useState<string[]>([]);
 
   useEffect(() => {
     async function load() {
       try {
         const response = await fetch("/api/memories", { cache: "no-store" });
         if (!response.ok) throw new Error("Memory request failed");
-        const payload = (await response.json()) as { memories: MemoryRecord[] };
-        setMemories(payload.memories);
+        const payload = (await response.json()) as {
+          profiles?: VoiceProfile[];
+          memories: MemoryRecord[];
+        };
+        setMemories(
+          payload.memories.map((memory) => ({
+            ...memory,
+            scope: memory.scope ?? { type: "global", label: "All voices" },
+          })),
+        );
+        setProfiles(payload.profiles ?? []);
       } catch {
         setFailed(true);
       } finally {
@@ -172,9 +257,83 @@ export function MemoryView() {
     const response = await fetch("/api/memories", {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ memoryId, active }),
+      body: JSON.stringify({ action: "setActive", memoryId, active }),
     });
     if (!response.ok) throw new Error("Preference update failed");
+  }
+
+
+  async function refreshMemories() {
+    const response = await fetch("/api/memories", { cache: "no-store" });
+    if (!response.ok) throw new Error("Memory request failed");
+    const payload = (await response.json()) as {
+      profiles?: VoiceProfile[];
+      memories: MemoryRecord[];
+    };
+    setMemories(
+      payload.memories.map((memory) => ({
+        ...memory,
+        scope: memory.scope ?? { type: "global", label: "All voices" },
+      })),
+    );
+    setProfiles(payload.profiles ?? []);
+  }
+
+  function scopeFromKey(key: string): MemoryScope | null {
+    if (key === "global") return { type: "global", label: "All voices" };
+    const id = key.replace(/^voice:/, "");
+    const profile = profiles.find((item) => item.id === id);
+    return profile
+      ? { type: "voice", voiceProfileId: profile.id, label: profile.displayName }
+      : null;
+  }
+
+  function openScopeManager(memory: MemoryRecord) {
+    setMutationError(null);
+    setStatus(null);
+    setMoveTarget(scopeKey(memory.scope));
+    setCopyTargets([]);
+    setScopeMemory(memory);
+  }
+
+  async function mutateScope(action: "move" | "copy") {
+    if (!scopeMemory || pendingMemoryId) return;
+    const target = scopeFromKey(moveTarget);
+    const targets = copyTargets.map(scopeFromKey).filter((scope): scope is MemoryScope => !!scope);
+    if ((action === "move" && !target) || (action === "copy" && !targets.length)) return;
+    setPendingMemoryId(scopeMemory.memoryId);
+    setMutationError(null);
+    try {
+      const body =
+        action === "move"
+          ? { action: "setScope", memoryId: scopeMemory.memoryId, scope: scopeInput(target!) }
+          : {
+              action: "copy",
+              memoryId: scopeMemory.memoryId,
+              targets: targets.map(scopeInput),
+            };
+      const response = await fetch("/api/memories", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error("Preference update failed");
+      await refreshMemories();
+      setScopeMemory(null);
+      setStatus(
+        action === "move"
+          ? `Preference moved to ${target?.label}.`
+          : `Preference copied to ${targets.map((item) => item.label).join(", ")}.`,
+      );
+    } catch {
+      setMutationError(
+        action === "move"
+          ? "This preference could not be moved. Please try again."
+          : "This preference could not be copied. Please try again.",
+      );
+    } finally {
+      setPendingMemoryId(null);
+    }
   }
 
   async function stopUsing(memoryId: string) {
@@ -252,21 +411,24 @@ export function MemoryView() {
     );
   }
 
-  const examples = memories.filter((memory) => memory.category === "example");
-  const edits = memories.filter((memory) => memory.category === "edit");
-  const insights = memories.filter((memory) => memory.category === "insight");
-  const avoid = memories.filter((memory) => memory.category === "avoid");
+  const visibleMemories = memories.filter(
+    (memory) => filter === "all" || scopeKey(memory.scope) === filter,
+  );
+  const examples = visibleMemories.filter((memory) => memory.category === "example");
+  const edits = visibleMemories.filter((memory) => memory.category === "edit");
+  const insights = visibleMemories.filter((memory) => memory.category === "insight");
+  const avoid = visibleMemories.filter((memory) => memory.category === "avoid");
 
   return (
     <div className="space-y-7">
       <section className="flex flex-col gap-4 rounded-2xl border border-line bg-surface px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-sm font-semibold">
-            {managing ? "Choose what Okara should stop using" : "You control these preferences"}
+            {managing ? "Manage where preferences apply" : "You control these preferences"}
           </h2>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-muted">
             {managing
-              ? "Stopping a preference removes it from future prompts while keeping your feedback history intact."
+              ? "Move, copy, or stop a preference while keeping your feedback history intact."
               : "Only active preferences can influence future drafts. You can stop using any item and undo the change."}
           </p>
         </div>
@@ -287,9 +449,37 @@ export function MemoryView() {
       <PreferenceNotice
         removed={removed}
         pending={pendingMemoryId !== null}
-        error={mutationError}
+        error={scopeMemory ? null : mutationError}
         onUndo={undoRemoval}
       />
+
+      {status && (
+        <p role="status" className="rounded-xl bg-accent-soft px-4 py-3 text-sm text-forest">
+          {status}
+        </p>
+      )}
+
+      <nav aria-label="Filter preferences by where they apply" className="flex gap-2 overflow-x-auto pb-1">
+        {[
+          ["all", "All"],
+          ["global", "Global"],
+          ...profiles.map((profile) => [`voice:${profile.id}`, profile.displayName]),
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={filter === value}
+            onClick={() => setFilter(value)}
+            className={`min-h-9 shrink-0 rounded-full border px-3.5 text-xs font-semibold transition ${
+              filter === value
+                ? "border-forest bg-forest text-white"
+                : "border-line bg-surface text-muted hover:border-forest/30 hover:text-ink"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
 
       <section
         aria-label="Preference summary"
@@ -327,16 +517,18 @@ export function MemoryView() {
                 <h3 className="text-sm font-semibold">{memory.title}</h3>
                 <p className="text-sm leading-6 text-muted">{memory.detail}</p>
                 <div className="flex flex-wrap items-center gap-2">
+                  <ScopeBadge scope={memory.scope} />
                   {memory.evidence && (
                     <span className="w-fit rounded-full bg-canvas px-2.5 py-1 text-[11px] font-semibold text-muted">
                       {memory.evidence}
                     </span>
                   )}
                   {managing && (
-                    <StopUsingButton
+                    <ManageActions
                       label={memory.title}
-                      memoryId={memory.memoryId}
+                      memory={memory}
                       pending={pendingMemoryId === memory.memoryId}
+                      onScope={openScopeManager}
                       onStop={stopUsing}
                     />
                   )}
@@ -361,14 +553,16 @@ export function MemoryView() {
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-sm leading-6">“{memory.detail}”</p>
                   {managing && (
-                    <StopUsingButton
+                    <ManageActions
                       label={`example: ${memory.detail.slice(0, 48)}`}
-                      memoryId={memory.memoryId}
+                      memory={memory}
                       pending={pendingMemoryId === memory.memoryId}
+                      onScope={openScopeManager}
                       onStop={stopUsing}
                     />
                   )}
                 </div>
+                <div className="mt-2"><ScopeBadge scope={memory.scope} /></div>
                 <Pills
                   items={memory.tags?.length ? memory.tags : memory.evidence ? [memory.evidence] : []}
                 />
@@ -394,14 +588,16 @@ export function MemoryView() {
               <article key={memory.id} className="rounded-2xl border border-line bg-surface p-5">
                 {managing && (
                   <div className="mb-3 flex justify-end">
-                    <StopUsingButton
+                    <ManageActions
                       label="this rewrite"
-                      memoryId={memory.memoryId}
+                      memory={memory}
                       pending={pendingMemoryId === memory.memoryId}
+                      onScope={openScopeManager}
                       onStop={stopUsing}
                     />
                   </div>
                 )}
+                <div className="mb-3"><ScopeBadge scope={memory.scope} /></div>
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-stretch">
                   <div className="rounded-xl bg-canvas p-3.5">
                     <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted">Before</p>
@@ -446,14 +642,16 @@ export function MemoryView() {
                     <p className="text-sm leading-6 text-muted">{memory.detail}</p>
                   </div>
                   {managing && (
-                    <StopUsingButton
+                    <ManageActions
                       label={memory.title}
-                      memoryId={memory.memoryId}
+                      memory={memory}
                       pending={pendingMemoryId === memory.memoryId}
+                      onScope={openScopeManager}
                       onStop={stopUsing}
                     />
                   )}
                 </div>
+                <div className="mt-2"><ScopeBadge scope={memory.scope} /></div>
                 {memory.example && (
                   <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted">
                     Example: “{memory.example}”
@@ -465,9 +663,129 @@ export function MemoryView() {
         </section>
       )}
 
+      {scopeMemory && (
+        <div
+          role="presentation"
+          className="fixed inset-0 z-50 grid place-items-end bg-ink/35 p-0 sm:place-items-center sm:p-6"
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && !pendingMemoryId) setScopeMemory(null);
+          }}
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target && !pendingMemoryId) setScopeMemory(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="scope-dialog-title"
+            className="max-h-[90vh] w-full overflow-y-auto rounded-t-3xl bg-surface p-5 shadow-xl sm:max-w-lg sm:rounded-3xl sm:p-6"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="scope-dialog-title" className="text-lg font-semibold">Manage where this applies</h2>
+                <p className="mt-1 text-sm text-muted">
+                  Currently: <span className="font-semibold text-ink">{scopeMemory.scope.label}</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close scope manager"
+                autoFocus
+                disabled={pendingMemoryId !== null}
+                onClick={() => setScopeMemory(null)}
+                className="grid size-9 shrink-0 place-items-center rounded-full hover:bg-canvas disabled:opacity-50"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {mutationError && (
+              <p role="alert" className="mt-4 rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">
+                {mutationError}
+              </p>
+            )}
+
+            <fieldset className="mt-6">
+              <legend className="font-semibold">Move</legend>
+              <p className="mt-1 text-xs leading-5 text-muted">
+                This changes where the original preference applies.
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {[
+                  ["global", "Global", "Use for all voices"],
+                  ...profiles.map((profile) => [
+                    `voice:${profile.id}`,
+                    profile.displayName,
+                    "Use for this voice only",
+                  ]),
+                ].map(([value, label, description]) => (
+                  <label key={value} className="flex cursor-pointer gap-3 rounded-xl border border-line p-3 text-sm">
+                    <input
+                      type="radio"
+                      name="move-scope"
+                      value={value}
+                      checked={moveTarget === value}
+                      onChange={() => setMoveTarget(value)}
+                    />
+                    <span><span className="block font-semibold">{label}</span><span className="text-xs text-muted">{description}</span></span>
+                  </label>
+                ))}
+              </div>
+              <Button
+                className="mt-3 w-full sm:w-auto"
+                disabled={pendingMemoryId !== null || moveTarget === scopeKey(scopeMemory.scope)}
+                onClick={() => void mutateScope("move")}
+              >
+                {pendingMemoryId ? <LoaderCircle className="size-4 animate-spin" /> : null}
+                Move preference
+              </Button>
+            </fieldset>
+
+            <fieldset className="mt-7 border-t border-line pt-6">
+              <legend className="font-semibold">Copy</legend>
+              <p className="mt-1 text-xs leading-5 text-muted">
+                Copies are independent. Later changes to one will not affect the others.
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {[
+                  { key: "global", label: "Global", description: "Copy for all voices" },
+                  ...profiles.map((profile) => ({
+                    key: `voice:${profile.id}`,
+                    label: profile.displayName,
+                    description: "Copy for this voice",
+                  })),
+                ].filter((option) => option.key !== scopeKey(scopeMemory.scope)).map((option) => (
+                  <label key={option.key} className="flex cursor-pointer gap-3 rounded-xl border border-line p-3 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={copyTargets.includes(option.key)}
+                      onChange={() => setCopyTargets((current) =>
+                        current.includes(option.key)
+                          ? current.filter((key) => key !== option.key)
+                          : [...current, option.key],
+                      )}
+                    />
+                    <span><span className="block font-semibold">{option.label}</span><span className="text-xs text-muted">{option.description}</span></span>
+                  </label>
+                ))}
+              </div>
+              <Button
+                variant="secondary"
+                className="mt-3 w-full sm:w-auto"
+                disabled={pendingMemoryId !== null || copyTargets.length === 0}
+                onClick={() => void mutateScope("copy")}
+              >
+                {pendingMemoryId ? <LoaderCircle className="size-4 animate-spin" /> : null}
+                Copy preference
+              </Button>
+            </fieldset>
+          </div>
+        </div>
+      )}
+
       <p className="border-t border-line pt-5 text-xs leading-5 text-muted">
         Okara ranks these preferences for each brief and sends only the most relevant few—not the
-        entire list—to the generation model. They are private to your account and voice.
+        entire list—to the generation model. They are private to your account and chosen scope.
       </p>
     </div>
   );

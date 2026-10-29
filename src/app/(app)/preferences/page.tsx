@@ -14,7 +14,8 @@ export default function PreferencesPage() {
         Writing preferences
       </h1>
       <p className="mt-3 max-w-2xl leading-7 text-muted">
-        Review and control the examples, edits, and corrections that can guide your next drafts.
+        Review what Okara learned, choose whether it applies to every voice or one voice, and copy
+        useful preferences between voices.
       </p>
       <div className="mt-8">
         <MemoryView />

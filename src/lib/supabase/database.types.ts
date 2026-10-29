@@ -362,7 +362,7 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
-          voice_profile_id: string;
+          voice_profile_id: string | null;
           kind: Database["public"]["Enums"]["preference_memory_kind"];
           content_json: Json;
           source_feedback_event_id: string | null;
@@ -371,6 +371,7 @@ export type Database = {
           active: boolean;
           memory_key: string | null;
           source_draft_id: string | null;
+          copied_from_memory_id: string | null;
           objective: string | null;
           tone_intensity: number | null;
           evidence_count: number;
@@ -380,7 +381,7 @@ export type Database = {
         Insert: {
           id?: string;
           user_id: string;
-          voice_profile_id: string;
+          voice_profile_id?: string | null;
           kind: Database["public"]["Enums"]["preference_memory_kind"];
           content_json: Json;
           source_feedback_event_id?: string | null;
@@ -389,6 +390,7 @@ export type Database = {
           active?: boolean;
           memory_key?: string | null;
           source_draft_id?: string | null;
+          copied_from_memory_id?: string | null;
           objective?: string | null;
           tone_intensity?: number | null;
           evidence_count?: number;
@@ -396,6 +398,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          voice_profile_id?: string | null;
           kind?: Database["public"]["Enums"]["preference_memory_kind"];
           content_json?: Json;
           source_feedback_event_id?: string | null;
@@ -404,12 +407,20 @@ export type Database = {
           active?: boolean;
           memory_key?: string | null;
           source_draft_id?: string | null;
+          copied_from_memory_id?: string | null;
           objective?: string | null;
           tone_intensity?: number | null;
           evidence_count?: number;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "preference_memories_copied_from_memory_user_fk";
+            columns: ["copied_from_memory_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "preference_memories";
+            referencedColumns: ["id", "user_id"];
+          },
           {
             foreignKeyName: "preference_memories_voice_profile_user_fk";
             columns: ["voice_profile_id", "user_id"];

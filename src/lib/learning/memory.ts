@@ -223,7 +223,7 @@ export function selectLearningContext(
       (memory) =>
         memory.active &&
         memory.userId === options.userId &&
-        memory.voiceProfileId === options.voiceProfileId,
+        (memory.voiceProfileId === null || memory.voiceProfileId === options.voiceProfileId),
     )
     .map((memory) => ({
       memory,

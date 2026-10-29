@@ -25,7 +25,8 @@ export interface MemoryScoreBreakdown {
 export interface PreferenceMemory {
   id: string;
   userId: string;
-  voiceProfileId: string;
+  /** Null means this preference applies to every voice owned by the user. */
+  voiceProfileId: string | null;
   kind: PreferenceMemoryKind;
   content: string | Record<string, unknown>;
   weight: number;

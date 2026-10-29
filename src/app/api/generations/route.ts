@@ -360,8 +360,11 @@ export async function POST(request: Request) {
       return apiError(404, "VOICE_PROFILE_NOT_FOUND", "Choose a ready voice profile.");
     }
 
-    const [{ data: sources, error: sourceError }, { data: memories, error: memoryError }] =
-      await Promise.all([
+    const [
+      { data: sources, error: sourceError },
+      { data: voiceMemories, error: voiceMemoryError },
+      { data: globalMemories, error: globalMemoryError },
+    ] = await Promise.all([
         supabase
           .from("source_posts")
           .select("text")
@@ -377,11 +380,20 @@ export async function POST(request: Request) {
           .eq("active", true)
           .order("weight", { ascending: false })
           .limit(40),
+        supabase
+          .from("preference_memories")
+          .select("id,user_id,voice_profile_id,kind,content_json,weight,active,memory_key,source_draft_id,objective,tone_intensity,evidence_count,created_at,updated_at")
+          .is("voice_profile_id", null)
+          .eq("user_id", user.id)
+          .eq("active", true)
+          .order("weight", { ascending: false })
+          .limit(40),
       ]);
     if (sourceError) throw sourceError;
-    if (memoryError) throw memoryError;
+    if (voiceMemoryError) throw voiceMemoryError;
+    if (globalMemoryError) throw globalMemoryError;
 
-    const learningMemories: PreferenceMemory[] = memories.map((memory) => ({
+    const learningMemories: PreferenceMemory[] = [...voiceMemories, ...globalMemories].map((memory) => ({
       id: memory.id,
       userId: memory.user_id,
       voiceProfileId: memory.voice_profile_id,

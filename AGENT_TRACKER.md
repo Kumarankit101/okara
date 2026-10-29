@@ -1,8 +1,8 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-30 04:21 IST
+Last updated: 2026-10-30 04:29 IST
 Coordinator: `/root`
-Status: Completed
+Status: In progress
 
 This file is the single source of truth for project execution. Only the coordinator edits it. Agents report structured completion results to the coordinator, who verifies evidence and records updates here.
 
@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-780 | Completed | 2026-10-30 04:21 IST | Live human-readable history tone labels, integration and production validation |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-814 | In progress | 2026-10-30 04:26 IST | Global+voice retrieval, cross-workstream integration, migration rollout and production validation |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
 | A-AI | LLM generation and personalization engineer | Inherited primary model — requested Astra override unavailable | T-300 | Completed | 2026-10-29 12:06 IST | `src/lib/ai/**`, `src/lib/learning/**`; 19 focused tests passed |
@@ -105,6 +105,9 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | A-FRANK | Memory-ranking and prompt specialist | Inherited primary model — requested `gpt-6.1-sol` unavailable | T-720 | Completed | 2026-10-30 03:29 IST | Deterministic contextual ranking, deduplication/conflict handling, bounded prompt packaging and 20 focused tests |
 | A-FUI | Feedback UI specialist | Inherited primary model — requested lower-cost `gpt-6-luna` unavailable | T-730 | Completed | 2026-10-30 03:29 IST | Reliable feedback actions, undo/edit/rejection UX and 5 focused component tests |
 | A-HTONE | History copy specialist | Inherited primary model at low reasoning — requested `gpt-6-luna` unavailable | T-780 | Completed | 2026-10-30 04:20 IST | Five canonical human-readable tone labels and focused regression coverage |
+| A-PSDATA | Preference-scope database specialist | Inherited primary model at low reasoning — Luna unavailable | T-811 | Completed | 2026-10-30 04:28 IST | Nullable global scope, provenance, safe deletion semantics, uniqueness and 14 SQL assertions |
+| A-PSAPI | Preference-scope API specialist | Inherited primary model at low reasoning — Luna unavailable | T-812 | Completed | 2026-10-30 04:28 IST | Authenticated scope listing, move/copy mutations and 12 route tests |
+| A-PSUI | Preference-scope UI specialist | Inherited primary model at low reasoning — Luna unavailable | T-813 | Completed | 2026-10-30 04:28 IST | Scope filters/badges, accessible multi-target move/copy UI and 6 component tests |
 
 ## C. Task board
 
@@ -135,6 +138,11 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-760 | Manage writing preferences | A-ROOT | Primary | T-750 | Completed | Canonical `/preferences` page, reversible per-preference controls, preserved feedback audit and `/memory` compatibility redirect | 21 test files/101 tests, lint, typecheck and build passed; READY deployment and authenticated production QA |
 | T-770 | Scalable generation history | A-ROOT | Primary | T-620 | Completed | Compact brief-first list, server search/pagination, on-demand details drawer and preserved History-to-Write links | 21 test files/102 tests, lint, typecheck and build passed; READY deploy, desktop/mobile authenticated QA and clean console |
 | T-780 | Human-readable history tone | A-HTONE with A-ROOT review | Inherited primary at low reasoning | T-770 | Completed | Replace raw tone intensity fractions with canonical user-facing labels while preserving numeric generation input | Full 21-file/102-test check, lint, typecheck and build; READY deploy and authenticated production QA with clean console |
+| T-800 | Global and voice preference architecture | A-ROOT | Primary | T-780 | Completed | Frozen global/voice scope, move/copy semantics, ownership and deletion behavior, API/UI/retrieval contracts | Contract review completed before delegation |
+| T-811 | Preference scope database | A-PSDATA | Inherited primary at low reasoning | T-800 | Completed | Additive migration, types and SQL assertions | Targeted compile/lint/diff checks; 14 pgTAP assertions authored; remote migration applied |
+| T-812 | Preference scope API | A-PSAPI | Inherited primary at low reasoning | T-800, T-811 contract | Completed | User-scoped GET plus setActive/setScope/copy mutations | 12 focused route tests and full check pass |
+| T-813 | Preference scope UI | A-PSUI | Inherited primary at low reasoning | T-800, T-812 contract | Completed | Filters, scope badges, multi-target move/copy UI | 6 focused component tests and full check pass |
+| T-814 | Global preference retrieval and release | A-ROOT | Primary | T-811, T-812, T-813 | In progress | Retrieve Global+selected Voice memories, integrate, migrate, validate and deploy | 21 files/115 tests, lint/typecheck/build pass; migration applied; deployment and production QA pending |
 
 ## D. Dependency and execution plan
 
@@ -183,6 +191,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | D-013 | Present memory by user meaning, not storage kind | One card per raw memory row | Grouping examples, rewrites, preferences and avoid rules makes the learning loop understandable; exact source events preserve labels for legacy memories | A-ROOT | 2026-10-30 |
 | D-014 | Rename user-facing memory to Writing preferences and soft-deactivate items | Keep “Memory”; permanently delete rows | “Preferences” describes what users control. Active-state updates immediately exclude stopped items from future prompt retrieval while retaining feedback and generation audit history; immediate undo is safe and reversible | A-ROOT | 2026-10-30 |
 | D-015 | Load history summaries in pages and fetch drafts only when a drawer opens | Render every draft for every run; load all history client-side | Brief-first server search and 20-run pagination keep the archive findable and make initial payload cost independent of five draft bodies per generation; on-demand detail preserves full recovery | A-ROOT | 2026-10-30 |
+| D-016 | Model preference scope as nullable voice ownership; copy creates independent provenanced rows | One shared row with many targets; duplicate untracked JSON | NULL scope cleanly represents Global while existing UUID scope remains voice-specific. Independent copies prevent later source changes from silently changing other voices; provenance and SET NULL source references preserve copies when the original voice is deleted | A-ROOT | 2026-10-30 |
 
 ## F. Risks and blockers
 
@@ -201,6 +210,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 
 | R-011 | Feedback v2 changes live persisted behavior and requires a safe backfill | A-FDATA/A-ROOT | Additive migration, deterministic latest-event backfill, stable memory keys, remote verification before app rollout | Mitigated; migration applied and new tables verified remotely |
 | R-012 | Parallel feedback work can conflict on shared contracts | A-ROOT | Coordinator owns contracts/API/workspace/tracker; agents have disjoint file ownership and must report interface changes | Resolved during integration; full check passes |
+| R-013 | Global/copy scope changes can duplicate prompt context or be lost when a source voice is deleted | A-ROOT/A-PSDATA | Stable root provenance, NULLS NOT DISTINCT uniqueness, content deduplication, independent copies, source-draft SET NULL and retrieval tests | Mitigated; migration applied and full tests pass |
 
 ## G. Integration and quality status
 
@@ -279,6 +289,8 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-30 04:17 | T-770 completed and deployed in commit `f4b8629`. Authenticated production QA used real history data to verify compact summaries, server search, five on-demand drafts, preserved Write links, a full-width 390×844 mobile drawer, and an empty warning/error console; no account data was changed. |
 | 2026-10-30 04:20 | Started T-780. The requested Luna agent could not run because that model is not enabled for the project; a replacement agent used the available inherited model at low reasoning. It mapped tone levels 1–5 to Restrained, Calm, Balanced, Confident and Bold, and the coordinator verified the full 21-file/102-test release check. |
 | 2026-10-30 04:21 | T-780 completed and deployed in commit `9ce64fc`. Authenticated production QA verified “Tone: Confident,” confirmed the old “Tone: 4/5” label is absent, and found no browser console warnings or errors. |
+| 2026-10-30 04:26 | Completed T-800 architecture and launched T-811/T-812/T-813 in parallel on the available model at low reasoning because Luna is not enabled. Frozen Global/Voice semantics, independent multi-target copies, ownership checks, deletion survival and bounded Global+Voice prompt retrieval before implementation. |
+| 2026-10-30 04:29 | Integrated T-811/T-812/T-813, reconciled strict API/UI scope payloads and duplicate-safe move keys, added Global+selected-Voice retrieval, and passed the full 21-file/115-test release check. Dry run identified exactly one additive migration; applied `20261030000200_preference_scopes.sql` remotely and confirmed migration history is aligned. |
 
 ## Standard agent completion report contract
 

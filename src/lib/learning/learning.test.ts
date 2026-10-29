@@ -83,6 +83,30 @@ describe("memory retrieval", () => {
     expect(JSON.stringify(context)).not.toContain("Must never leak");
   });
 
+  it("combines global memories with the selected voice without leaking another voice", () => {
+    const context = selectLearningContext(
+      [
+        memory("global", "preference", "Use compact paragraphs for every voice", {
+          voiceProfileId: null,
+        }),
+        memory("selected-voice", "positive_example", "A useful voice-specific example"),
+        memory("other-voice", "negative_rule", "Must never reach this prompt", {
+          voiceProfileId: "voice-b",
+        }),
+      ],
+      {
+        userId: "user-a",
+        voiceProfileId: "voice-a",
+        brief: "Write a useful product post with compact paragraphs",
+        now: new Date("2026-10-29T00:00:00.000Z"),
+      },
+    );
+
+    expect(context.preferences.map(({ id }) => id)).toContain("global");
+    expect(context.positiveExamples.map(({ id }) => id)).toContain("selected-voice");
+    expect(JSON.stringify(context)).not.toContain("Must never reach this prompt");
+  });
+
   it("respects the prompt token budget", () => {
     const context = selectLearningContext(
       [memory("large", "positive_example", "x".repeat(400))],
