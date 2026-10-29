@@ -1,8 +1,8 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-30 05:18 IST
+Last updated: 2026-10-30 05:20 IST
 Coordinator: `/root`
-Status: In progress — T-823 navigation performance release
+Status: Completed
 
 This file is the single source of truth for project execution. Only the coordinator edits it. Agents report structured completion results to the coordinator, who verifies evidence and records updates here.
 
@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-823 navigation performance | In progress | 2026-10-30 05:18 IST | Prefetched route fallback, active navigation and transition feedback |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-823 navigation performance | Completed | 2026-10-30 05:20 IST | Prefetched route fallback, active navigation and transition feedback |
 | A-VSYNC | Write selector synchronization implementer | Available default agent at low reasoning — requested Luna and Sol models were unavailable | T-822 implementation | Completed | 2026-10-30 05:13 IST | Add-voice sentinel, shared transitions and focused tests |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
@@ -148,7 +148,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-820 | Editable voice profiles | A-ROOT | Primary | T-610, T-200, T-300 | Completed | Rename voices; add, edit, and remove curated source samples; atomically rebuild the style profile while preserving drafts and preferences | 22 files/121 tests, lint/typecheck/build pass; migration aligned; READY deploy and authenticated production QA without data mutation |
 | T-821 | Write-page voice management | A-ROOT | Primary | T-820 | Completed | Open the voice-management workflow for the active voice directly from Write and refresh its label after updates | 24 files/123 tests, lint/typecheck/build pass; READY deploy and authenticated production QA without data mutation |
 | T-822 | Synchronize Add voice and active selector | A-VSYNC with A-ROOT review | Available default agent at low reasoning | T-821 | Completed | Keep the header selector, add form and selected active-voice card in one state; selecting an existing voice exits add mode | 25 files/125 tests, lint/typecheck/build pass; READY deploy and authenticated production transition QA |
-| T-823 | Responsive authenticated navigation | A-ROOT | Primary | T-822 | In progress | Preserve the current shell/components while adding partial-prefetch loading UI, active-route state and immediate pending feedback | Local full check passes: 26 files/127 tests, lint, typecheck and production build; deployment and browser QA pending |
+| T-823 | Responsive authenticated navigation | A-ROOT | Primary | T-822 | Completed | Preserve the current shell/components while adding partial-prefetch loading UI, active-route state and immediate pending feedback | 26 test files/127 tests, lint, typecheck and production build; READY deploy; throttled and normal authenticated navigation QA passed |
 
 ## D. Dependency and execution plan
 
@@ -312,6 +312,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-30 05:13 | T-822 delegation requested the user-preferred lower-cost Luna model, then Sol; both were rejected by project entitlements before work ran. The available default agent completed the bounded task at low reasoning, and the coordinator independently reviewed every change. |
 | 2026-10-30 05:17 | T-822 deployed in commit `c1b11b1`. Authenticated production QA verified existing voice → Add voice form/selected option → different existing voice/restored card, with no profile creation or data mutation. Full validation passed with 25 test files/125 tests. |
 | 2026-10-30 05:18 | Started T-823 after reading the bundled Next.js 16.4 navigation guidance. Added an authenticated-group `loading.tsx`, active-route styling, accessible per-link pending feedback and a top progress line while retaining default partial prefetching. Local validation passes with 26 test files/127 tests, lint, typecheck and production build. |
+| 2026-10-30 05:20 | T-823 deployed in commit `a0c58da`; Vercel reached READY at the production alias. Authenticated Chrome QA showed the loading shell within about 340 ms under simulated slow networking, normal History/Preferences shells within about 260–280 ms, correct `aria-current` state, successful data completion and no warning/error console logs. |
 
 ## Standard agent completion report contract
 
