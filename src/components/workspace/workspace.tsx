@@ -34,6 +34,8 @@ interface VoiceProfileSummary {
 
 type SourceMode = "x_api" | "pasted";
 
+const ADD_VOICE_VALUE = "add-voice";
+
 interface RestoredGeneration {
   id: string;
   createdAt: string;
@@ -88,6 +90,29 @@ export function Workspace({
     () => profiles.find((profile) => profile.id === activeProfileId),
     [profiles, activeProfileId],
   );
+
+  function startAddingVoice() {
+    setSourceMode("pasted");
+    setHandle("");
+    setDisplayName("");
+    setSamples("");
+    setAuthorizationConfirmed(false);
+    setShowProfileForm(true);
+    setEditingVoice(false);
+    setError("");
+  }
+
+  function selectVoice(value: string) {
+    if (value === ADD_VOICE_VALUE) {
+      startAddingVoice();
+      return;
+    }
+
+    setActiveProfileId(value);
+    setShowProfileForm(false);
+    setEditingVoice(false);
+    setError("");
+  }
 
   useEffect(() => {
     async function loadProfiles() {
@@ -349,8 +374,8 @@ export function Workspace({
           <label className="relative block min-w-56">
             <span className="sr-only">Active voice profile</span>
             <select
-              value={activeProfileId}
-              onChange={(event) => setActiveProfileId(event.target.value)}
+              value={showProfileForm ? ADD_VOICE_VALUE : activeProfileId}
+              onChange={(event) => selectVoice(event.target.value)}
               className="min-h-11 w-full appearance-none rounded-full border border-line bg-surface px-4 pr-10 text-sm font-semibold outline-none focus:border-forest"
             >
               {profiles.map((profile) => (
@@ -358,6 +383,7 @@ export function Workspace({
                   {profile.handle ? `@${profile.handle}` : profile.displayName}
                 </option>
               ))}
+              <option value={ADD_VOICE_VALUE}>Add voice</option>
             </select>
             <ChevronDown className="pointer-events-none absolute right-4 top-3.5 size-4 text-muted" />
           </label>
@@ -499,14 +525,7 @@ export function Workspace({
                     </Button>
                     <Button
                       variant="secondary"
-                      onClick={() => {
-                        setHandle("");
-                        setDisplayName("");
-                        setSamples("");
-                        setAuthorizationConfirmed(false);
-                        setShowProfileForm(true);
-                        setError("");
-                      }}
+                      onClick={startAddingVoice}
                     >
                       <Plus className="size-4" /> Add voice
                     </Button>
