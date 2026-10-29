@@ -1,8 +1,8 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-30 04:15 IST
+Last updated: 2026-10-30 04:17 IST
 Coordinator: `/root`
-Status: In progress
+Status: Completed
 
 This file is the single source of truth for project execution. Only the coordinator edits it. Agents report structured completion results to the coordinator, who verifies evidence and records updates here.
 
@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-770 | In progress | 2026-10-30 04:15 IST | Scalable history summaries, server search/pagination, on-demand right-side drawer and production validation |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-770 | Completed | 2026-10-30 04:17 IST | Live scalable history summaries, server search/pagination, on-demand right-side drawer and responsive production validation |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
 | A-AI | LLM generation and personalization engineer | Inherited primary model — requested Astra override unavailable | T-300 | Completed | 2026-10-29 12:06 IST | `src/lib/ai/**`, `src/lib/learning/**`; 19 focused tests passed |
@@ -132,7 +132,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-740 | Feedback integration, migration, validation and deploy | A-ROOT | Primary | T-710, T-720, T-730 | Completed | Integrated API/UI/generation path and production rollout | Full check, remote migration verification, READY deployment, browser and protected-endpoint smoke passed |
 | T-750 | Human-readable memory page | A-ROOT | Primary | T-740 | Completed | Concise grouped memory UI, meaningful evidence labels, before/after edits and hidden low-information records | 7 focused tests; full 20-file/97-test check; authenticated production browser QA and clean console |
 | T-760 | Manage writing preferences | A-ROOT | Primary | T-750 | Completed | Canonical `/preferences` page, reversible per-preference controls, preserved feedback audit and `/memory` compatibility redirect | 21 test files/101 tests, lint, typecheck and build passed; READY deployment and authenticated production QA |
-| T-770 | Scalable generation history | A-ROOT | Primary | T-620 | In progress | Compact brief-first list, server search/pagination, on-demand details drawer and preserved History-to-Write links | 21 test files/102 tests, lint, typecheck and build passed; production QA pending |
+| T-770 | Scalable generation history | A-ROOT | Primary | T-620 | Completed | Compact brief-first list, server search/pagination, on-demand details drawer and preserved History-to-Write links | 21 test files/102 tests, lint, typecheck and build passed; READY deploy, desktop/mobile authenticated QA and clean console |
 
 ## D. Dependency and execution plan
 
@@ -180,6 +180,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | D-012 | Deterministic contextual ranking without mandatory embedding calls | Dump all memories, always call embeddings | Goal/tone/topic/recency ranking plus diversity is explainable and cheap; optional embeddings can be added later without blocking generation | A-ROOT | 2026-10-30 |
 | D-013 | Present memory by user meaning, not storage kind | One card per raw memory row | Grouping examples, rewrites, preferences and avoid rules makes the learning loop understandable; exact source events preserve labels for legacy memories | A-ROOT | 2026-10-30 |
 | D-014 | Rename user-facing memory to Writing preferences and soft-deactivate items | Keep “Memory”; permanently delete rows | “Preferences” describes what users control. Active-state updates immediately exclude stopped items from future prompt retrieval while retaining feedback and generation audit history; immediate undo is safe and reversible | A-ROOT | 2026-10-30 |
+| D-015 | Load history summaries in pages and fetch drafts only when a drawer opens | Render every draft for every run; load all history client-side | Brief-first server search and 20-run pagination keep the archive findable and make initial payload cost independent of five draft bodies per generation; on-demand detail preserves full recovery | A-ROOT | 2026-10-30 |
 
 ## F. Risks and blockers
 
@@ -221,6 +222,8 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 - Latest `npm run check`: ESLint, TypeScript, 20 test files/97 tests, and the Next.js production build passed. Authenticated Chrome QA verified the live page with the user's real data and no console warnings or errors.
 - “Writing preferences” is now the canonical product surface at `/preferences`; `/memory` remains a compatibility redirect. Users can stop individual preferences from influencing future drafts and immediately undo the change without deleting feedback or generation audit history.
 - Latest `npm run check`: ESLint, TypeScript, 21 test files/101 tests, and the Next.js production build passed. Authenticated production QA verified the management mode against real data without changing any live preference.
+- History now presents compact brief-first generation summaries, searches briefs on the server, paginates 20 at a time, and loads one generation’s metadata and drafts only when its responsive right-side drawer opens. Existing run/draft restoration links remain intact.
+- Latest `npm run check`: ESLint, TypeScript, 21 test files/102 tests, and the Next.js production build passed. Authenticated desktop/mobile production QA verified list, search, drawer and draft links with a clean console.
 
 ### Pending
 
@@ -270,6 +273,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-30 04:04 | Started T-760. Chose “Writing preferences” as the user-facing name, `/preferences` as the canonical route, and reversible active-state controls so users can stop a preference from influencing future drafts without deleting feedback or generation audit history. |
 | 2026-10-30 04:08 | T-760 completed and deployed in commit `a42ec34`. The production alias is READY; authenticated QA verified canonical `/preferences`, the legacy `/memory` redirect, concise management controls, and immediate undo. Full validation passed with 21 test files/101 tests, lint, typecheck and production build; no live preference was mutated during QA. |
 | 2026-10-30 04:15 | Started T-770. Replaced draft-heavy history cards with brief-first summaries, server-side brief search, 20-item pagination, and an accessible right-side drawer that loads one generation’s metadata and drafts on demand. Full local validation passed with 21 test files/102 tests, lint, typecheck and production build. |
+| 2026-10-30 04:17 | T-770 completed and deployed in commit `f4b8629`. Authenticated production QA used real history data to verify compact summaries, server search, five on-demand drafts, preserved Write links, a full-width 390×844 mobile drawer, and an empty warning/error console; no account data was changed. |
 
 ## Standard agent completion report contract
 
