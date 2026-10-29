@@ -1,6 +1,6 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-30 03:31 IST
+Last updated: 2026-10-30 03:52 IST
 Coordinator: `/root`
 Status: In progress
 
@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-740 | Completed | 2026-10-30 03:31 IST | Integrated feedback contracts, API, generation retrieval, migration rollout and production validation |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-750 | In progress | 2026-10-30 03:52 IST | Memory presentation, concise grouping, regression coverage and production validation |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
 | A-AI | LLM generation and personalization engineer | Inherited primary model — requested Astra override unavailable | T-300 | Completed | 2026-10-29 12:06 IST | `src/lib/ai/**`, `src/lib/learning/**`; 19 focused tests passed |
@@ -130,6 +130,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-720 | Deduplicated contextual memory ranking | A-FRANK | Inherited primary | T-700 | Completed | Goal/tone/topic/recency ranking, conflict/dedup/diversity, bounded prompt context | 20 focused learning/prompt tests, lint and typecheck passed |
 | T-730 | Reliable feedback UI loop | A-FUI | Inherited primary | T-700 | Completed | Pending/success/error states, selected/saved toggles, edit and rejection UX | 5 focused component tests, lint and diff check passed |
 | T-740 | Feedback integration, migration, validation and deploy | A-ROOT | Primary | T-710, T-720, T-730 | Completed | Integrated API/UI/generation path and production rollout | Full check, remote migration verification, READY deployment, browser and protected-endpoint smoke passed |
+| T-750 | Human-readable memory page | A-ROOT | Primary | T-740 | In progress | Concise grouped memory UI, meaningful evidence labels, before/after edits and hidden low-information records | Presentation tests, component tests, full check and browser QA |
 
 ## D. Dependency and execution plan
 
@@ -256,6 +257,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-30 03:27 | Integrated feedback data, ranking and UI deliverables. Full validation passed: ESLint, TypeScript, 18 test files/90 tests, and Next.js production build. |
 | 2026-10-30 03:28 | Reconciled Supabase migration history without deleting schema objects, applied feedback v2 remotely, and verified `draft_feedback_state` and `generation_memory_links` in production. |
 | 2026-10-30 03:31 | Deployed commit `c38077a` to Vercel production. The deployment reached READY; live login returned 200, protected feedback/generation routes returned 401 unauthenticated, and Playwright verified the production login document. T-740 completed. |
+| 2026-10-30 03:52 | Started T-750 after reviewing the production screenshot. Scoped the redesign to replace internal memory-kind cards with compact, human-readable insights, signal labels, and exact before/after edits; unrelated workspace changes will remain untouched. |
 
 ## Standard agent completion report contract
 
