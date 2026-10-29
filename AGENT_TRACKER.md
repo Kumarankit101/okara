@@ -1,6 +1,6 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-29 12:12 IST
+Last updated: 2026-10-29 18:14 IST
 Coordinator: `/root`
 Status: In progress
 
@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-400, T-500, T-600 | Completed | 2026-10-29 12:36 IST | `AGENT_TRACKER.md`, shared contracts, app shell, integrated product, production deployment |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-400, T-500, T-600, T-640 | Completed | 2026-10-29 18:14 IST | `AGENT_TRACKER.md`, shared contracts, app shell, integrated product, production deployment, viewport-safe auth layout |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
 | A-AI | LLM generation and personalization engineer | Inherited primary model — requested Astra override unavailable | T-300 | Completed | 2026-10-29 12:06 IST | `src/lib/ai/**`, `src/lib/learning/**`; 19 focused tests passed |
@@ -118,7 +118,8 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-600 | GitHub, Supabase, Vercel, README, delivery | A-ROOT | Primary | T-500 | Completed | Private repo, production Supabase, live Vercel app, README | Public pages 200; protected APIs 401 unauthenticated; deploy READY |
 | T-610 | Settings route and account/data controls | A-ROOT | Primary | T-100, T-400 | Completed | Account details, voice deletion, privacy links, sign-out, responsive navigation | Lint/typecheck/build; 11 files/62 tests; Playwright verified protected route reaches sign-in instead of 404 |
 | T-620 | History-to-Write restoration | A-ROOT | Primary | T-300, T-400 | Completed | Durable run/draft deep links; restored voice, brief, constraints, latest edits and feedback state | Lint/typecheck/build; 13 files/64 tests pass |
-| T-630 | Email/password auth and registration confirmation | A-AUTH with A-ROOT review | Inherited primary | T-100, T-600 | Completed | Password sign-in/signup route, confirmation UX, magic-link fallback, safe auth errors, hosted password policy | Lint/typecheck/build; 16 files/74 tests; live invalid-input smoke pending deployment |
+| T-630 | Email/password auth and registration confirmation | A-AUTH with A-ROOT review | Inherited primary | T-100, T-600 | Completed | Password sign-in/signup route, confirmation UX, magic-link fallback, safe auth errors, hosted password policy | Lint/typecheck/build; 16 files/74 tests; live invalid-input smoke passed |
+| T-640 | Login viewport-fit responsive layout | A-ROOT | Primary | T-630 | Completed | Two-column desktop auth card and compact short-phone registration layout | Zero document overflow at 375×667, 390×844, 1366×768, and 1440×900; lint/typecheck/74 tests/build pass |
 
 ## D. Dependency and execution plan
 
@@ -184,12 +185,13 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 - Architecture, scalability plan, Next.js application, Supabase schema/RLS, auth wiring, official X client, pasted fallback, OpenAI generation, retrieval learning, UI, history, memory, feedback, quotas, idempotency, scheduled cleanup, and README.
 - Official OpenAI documentation review for Responses API, Structured Outputs, and `gpt-5.6-terra`.
 - Real OpenAI structured-output smoke: completed with 2 drafts; 90 input and 68 output tokens.
-- `npm run check`: ESLint passed, TypeScript passed, 10 test files/60 tests passed, production build passed.
+- `npm run check`: ESLint passed, TypeScript passed, 16 test files/74 tests passed, production build passed.
 - Playwright desktop/mobile public-page QA and graceful missing-config login error handling.
 - Production Supabase project provisioned; eight tables, forced RLS, and policies verified; hourly cleanup job active.
 - Supabase Auth site/redirect URLs configured for `https://okara-eight.vercel.app`.
 - Vercel production deployment is READY; landing/login return 200 and protected APIs return 401 when unauthenticated.
 - Email/password sign-in and confirmation-gated registration are implemented alongside magic links; hosted password policy is enforced at 8+ characters with letters and numbers.
+- Login and registration fit common laptop and phone viewports without document scrolling; Playwright verified sign-up at 375×667, 390×844, 1366×768, and 1440×900.
 
 ### Pending
 
@@ -218,6 +220,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-29 12:11 | Full release check passed: ESLint, TypeScript, 10 test files/60 tests, and Next.js production build. |
 | 2026-10-29 12:12 | Playwright verified desktop and 390px mobile landing layouts plus graceful login configuration error. Supabase dashboard project creation is staged pending required user confirmation for persistent credentials. |
 | 2026-10-29 12:12 | Created private GitHub repository and pushed `main`: `https://github.com/Kumarankit101/okara`. Production deployment remains blocked only on Supabase project confirmation and Vercel authentication. |
+| 2026-10-29 18:14 | T-640 completed: converted the tall auth card into a two-column desktop layout with a height-aware compact phone layout. Playwright measured zero overflow across four representative viewports; full 16-file/74-test check and production build passed. |
 | 2026-10-29 12:24 | Created and linked production Supabase project, applied the schema, and verified all eight tables have forced RLS with four ownership policies each. |
 | 2026-10-29 12:29 | Vercel Hobby rejected hourly cron; moved the job to Supabase Cron and verified `okara-delete-expired-source-posts` is active on `0 * * * *`. |
 | 2026-10-29 12:33 | Fixed cross-platform install by making the macOS Rolldown binding optional; full check passed again with 10 files and 60 tests. |

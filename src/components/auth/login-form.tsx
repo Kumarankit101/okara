@@ -103,12 +103,12 @@ export function LoginForm({ initialError = "" }: { initialError?: string }) {
 
   if (confirmationRequired) {
     return (
-      <div className="mt-8 rounded-3xl border border-forest/20 bg-accent-soft p-5 text-forest-deep">
+      <div className="mt-5 rounded-2xl border border-forest/20 bg-accent-soft p-4 text-forest-deep md:mt-0">
         <CheckCircle2 className="size-7" />
-        <h2 className="mt-4 text-lg font-semibold">Confirm your email</h2>
+        <h2 className="mt-3 text-lg font-semibold">Confirm your email</h2>
         <p role="status" className="mt-2 text-sm leading-6">{message}</p>
         <p className="mt-2 break-all text-xs font-semibold">{email}</p>
-        <button type="button" onClick={() => changeMode("signin")} className="mt-5 text-sm font-bold underline underline-offset-4">
+        <button type="button" onClick={() => changeMode("signin")} className="mt-4 text-sm font-bold underline underline-offset-4">
           Return to sign in
         </button>
       </div>
@@ -116,43 +116,43 @@ export function LoginForm({ initialError = "" }: { initialError?: string }) {
   }
 
   return (
-    <div className="mt-8">
-      <div className="grid grid-cols-2 rounded-xl bg-canvas p-1" aria-label="Authentication mode">
+    <div className="mt-5 md:mt-0 md:border-l md:border-line md:pl-8 [@media(max-width:767px)_and_(max-height:740px)]:mt-2">
+      <div className="grid grid-cols-2 rounded-xl bg-canvas p-0.5" aria-label="Authentication mode">
         {(["signin", "signup"] as const).map((item) => (
           <button
             key={item}
             type="button"
             aria-pressed={mode === item}
             onClick={() => changeMode(item)}
-            className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${mode === item ? "bg-white text-ink shadow-sm" : "text-muted"}`}
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${mode === item ? "bg-white text-ink shadow-sm" : "text-muted"}`}
           >
             {item === "signin" ? "Sign in" : "Create account"}
           </button>
         ))}
       </div>
 
-      <form className="mt-6 space-y-4" onSubmit={handlePasswordSubmit}>
+      <form className="mt-4 space-y-3 [@media(max-width:767px)_and_(max-height:740px)]:mt-2 [@media(max-width:767px)_and_(max-height:740px)]:space-y-2" onSubmit={handlePasswordSubmit}>
         {mode === "signup" ? (
           <AuthField label="Display name" icon={<UserRound className="size-4 text-muted" />}>
-            <input type="text" autoComplete="name" required maxLength={80} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Your name" className="min-h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted/60" />
+            <input type="text" autoComplete="name" required maxLength={80} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Your name" className="min-h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted/60" />
           </AuthField>
         ) : null}
 
         <AuthField label="Work email" icon={<Mail className="size-4 text-muted" />}>
-          <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="min-h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted/60" />
+          <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="min-h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted/60" />
         </AuthField>
 
         <AuthField label="Password" icon={<KeyRound className="size-4 text-muted" />}>
-          <input type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} required minLength={mode === "signup" ? 8 : 1} maxLength={72} value={password} onChange={(event) => setPassword(event.target.value)} className="min-h-12 w-full bg-transparent text-sm outline-none" />
+          <input type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} required minLength={mode === "signup" ? 8 : 1} maxLength={72} value={password} onChange={(event) => setPassword(event.target.value)} className="min-h-10 w-full bg-transparent text-sm outline-none" />
         </AuthField>
 
         {mode === "signup" ? (
           <AuthField label="Confirm password" icon={<KeyRound className="size-4 text-muted" />}>
-            <input type="password" autoComplete="new-password" required minLength={8} maxLength={72} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="min-h-12 w-full bg-transparent text-sm outline-none" />
+            <input type="password" autoComplete="new-password" required minLength={8} maxLength={72} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="min-h-10 w-full bg-transparent text-sm outline-none" />
           </AuthField>
         ) : null}
 
-        {mode === "signup" ? <p className="text-xs leading-5 text-muted">Use at least 8 characters with a letter and a number.</p> : null}
+        {mode === "signup" ? <p className="text-[11px] leading-4 text-muted">Use at least 8 characters with a letter and a number.</p> : null}
 
         <Button className="w-full" type="submit" disabled={status === "loading"}>
           {status === "loading" ? <LoaderCircle className="size-4 animate-spin" /> : <ArrowRight className="size-4" />}
@@ -160,21 +160,24 @@ export function LoginForm({ initialError = "" }: { initialError?: string }) {
         </Button>
       </form>
 
-      <div className="my-5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+      <div className="my-3 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.12em] text-muted [@media(max-width:767px)_and_(max-height:740px)]:my-2">
         <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
       </div>
       <Button type="button" variant="secondary" className="w-full" disabled={status === "loading"} onClick={sendMagicLink}>
         <Mail className="size-4" /> Email me a sign-in link
       </Button>
 
-      {message ? (
-        <p role="status" className={`mt-4 rounded-2xl px-4 py-3 text-sm leading-6 ${status === "error" ? "bg-red-50 text-danger" : "bg-accent-soft text-forest"}`}>
-          {message}
-        </p>
-      ) : null}
-      <p className="mt-5 text-center text-xs leading-5 text-muted">
-        New accounts must confirm their email before signing in. By continuing, you agree to use only writing samples you own or are authorized to use.
-      </p>
+      <div className="mt-3 flex min-h-12 items-center justify-center [@media(max-width:767px)_and_(max-height:740px)]:mt-2">
+        {message ? (
+          <p role="status" className={`text-center text-[11px] leading-3.5 ${status === "error" ? "text-danger" : "text-forest"}`}>
+            {message}
+          </p>
+        ) : (
+          <p className="text-center text-[11px] leading-3.5 text-muted">
+            Confirm your email after signup. Use only writing samples you own or are allowed to reference.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -182,8 +185,8 @@ export function LoginForm({ initialError = "" }: { initialError?: string }) {
 function AuthField({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-semibold">{label}</span>
-      <span className="flex items-center gap-3 rounded-2xl border border-line bg-white px-4 focus-within:border-forest focus-within:ring-3 focus-within:ring-accent/40">
+      <span className="mb-1 block text-xs font-semibold">{label}</span>
+      <span className="flex items-center gap-3 rounded-xl border border-line bg-white px-3 focus-within:border-forest focus-within:ring-3 focus-within:ring-accent/40">
         {icon}
         {children}
       </span>
