@@ -15,7 +15,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { DraftCard, type DraftRecord } from "./draft-card";
+import {
+  DraftCard,
+  type DraftRecord,
+  type FeedbackMutationInput,
+  type FeedbackMutationResult,
+} from "./draft-card";
 
 interface VoiceProfileSummary {
   id: string;
@@ -263,20 +268,46 @@ export function Workspace({
   }
 
   async function sendFeedback(
-    draftId: string,
-    eventType: string,
-    editedText?: string,
-    reasonCode?: string,
-  ) {
+    input: FeedbackMutationInput,
+  ): Promise<FeedbackMutationResult> {
     const response = await fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ draftId, eventType, editedText, reasonCode }),
+      body: JSON.stringify(input),
     });
-    if (!response.ok) {
-      const payload = (await response.json()) as { error?: { message?: string } };
-      setError(payload.error?.message ?? "Feedback was not saved.");
+    const payload = (await response.json()) as {
+      state?: FeedbackMutationResult;
+      error?: { message?: string };
+    };
+    if (!response.ok || !payload.state) {
+      const message = payload.error?.message ?? "Feedback was not saved.";
+      setError(message);
+      throw new Error(message);
     }
+    const state = payload.state;
+    setError("");
+    setDrafts((current) =>
+      current.map((draft) => {
+        if (draft.id === input.draftId) {
+          return {
+            ...draft,
+            text: state.currentText,
+            characterCount: Array.from(state.currentText).length,
+            isSelected: state.selected,
+            isSaved: state.saved,
+            isLiked: state.liked,
+            isRejected: state.rejected,
+            rejectionReason: state.reasonCode ?? null,
+            rejectionNote: state.reasonNote ?? null,
+            revision: state.revision,
+          };
+        }
+        return input.eventType === "selected" && input.active
+          ? { ...draft, isSelected: false }
+          : draft;
+      }),
+    );
+    return state;
   }
 
   return (
@@ -584,7 +615,7 @@ export function Workspace({
               <div className="grid gap-4 2xl:grid-cols-2">
                 {drafts.map((draft) => (
                   <DraftCard
-                    key={draft.id}
+                    key={`${draft.id}:${draft.revision ?? 0}:${draft.isSelected ? 1 : 0}:${draft.isSaved ? 1 : 0}:${draft.isLiked ? 1 : 0}:${draft.isRejected ? 1 : 0}`}
                     draft={draft}
                     characterLimit={characterLimit}
                     onFeedback={sendFeedback}

@@ -115,4 +115,136 @@ describe("memory retrieval", () => {
     );
     expect(context.positiveExamples[0]?.id).toBe("relevant");
   });
+
+  it("uses goal and tone compatibility when otherwise equivalent", () => {
+    const context = selectLearningContext(
+      [
+        memory("mismatch", "positive_example", "A product launch lesson", {
+          objective: "engage",
+          toneIntensity: 1,
+        }),
+        memory("match", "positive_example", "A product launch lesson with detail", {
+          objective: "educate",
+          toneIntensity: 4,
+        }),
+      ],
+      {
+        userId: "user-a",
+        voiceProfileId: "voice-a",
+        brief: "Teach a product launch lesson",
+        objective: "educate",
+        toneIntensity: 4,
+        now: new Date("2026-10-29T00:00:00.000Z"),
+      },
+    );
+    expect(context.positiveExamples[0]?.id).toBe("match");
+    expect(context.positiveExamples[0]?.scoreBreakdown.goal).toBe(1);
+    expect(context.positiveExamples[0]?.scoreBreakdown.tone).toBe(1);
+  });
+
+  it("deduplicates stable keys and normalized content", () => {
+    const context = selectLearningContext(
+      [
+        memory("old-key", "positive_example", "Old opening", {
+          memoryKey: "positive:draft-a",
+          updatedAt: "2026-10-27T00:00:00.000Z",
+        }),
+        memory("new-key", "positive_example", "New opening", {
+          memoryKey: "positive:draft-a",
+          updatedAt: "2026-10-29T00:00:00.000Z",
+        }),
+        memory("duplicate-one", "positive_example", "Concise openings!"),
+        memory("duplicate-two", "positive_example", "concise openings"),
+      ],
+      {
+        userId: "user-a",
+        voiceProfileId: "voice-a",
+        brief: "An opening",
+        now: new Date("2026-10-30T00:00:00.000Z"),
+      },
+    );
+    const ids = context.positiveExamples.map(({ id }) => id);
+    expect(ids).toContain("new-key");
+    expect(ids).not.toContain("old-key");
+    expect(ids.filter((id) => id.startsWith("duplicate"))).toHaveLength(1);
+  });
+
+  it("lets the newest explicit decision resolve a source-draft conflict", () => {
+    const context = selectLearningContext(
+      [
+        memory("accepted", "positive_example", "An older accepted draft", {
+          sourceDraftId: "draft-a",
+          updatedAt: "2026-10-27T00:00:00.000Z",
+        }),
+        memory("rejected", "negative_rule", "Avoid the rejected draft", {
+          sourceDraftId: "draft-a",
+          updatedAt: "2026-10-29T00:00:00.000Z",
+        }),
+      ],
+      {
+        userId: "user-a",
+        voiceProfileId: "voice-a",
+        brief: "A draft",
+        now: new Date("2026-10-30T00:00:00.000Z"),
+      },
+    );
+    expect(context.positiveExamples).toHaveLength(0);
+    expect(context.negativeRules.map(({ id }) => id)).toEqual(["rejected"]);
+  });
+
+  it("limits one source draft to two selected memories", () => {
+    const context = selectLearningContext(
+      [
+        memory("same-1", "positive_example", "Useful product opening one", {
+          sourceDraftId: "draft-a",
+        }),
+        memory("same-2", "positive_example", "Useful product opening two", {
+          sourceDraftId: "draft-a",
+        }),
+        memory("same-3", "positive_example", "Useful product opening three", {
+          sourceDraftId: "draft-a",
+        }),
+        memory("other", "positive_example", "A distinct useful product conclusion", {
+          sourceDraftId: "draft-b",
+        }),
+      ],
+      {
+        userId: "user-a",
+        voiceProfileId: "voice-a",
+        brief: "Useful product writing",
+        now: new Date("2026-10-29T00:00:00.000Z"),
+      },
+    );
+    expect(
+      context.positiveExamples.filter(({ sourceDraftId }) => sourceDraftId === "draft-a"),
+    ).toHaveLength(2);
+    expect(context.positiveExamples.map(({ id }) => id)).toContain("other");
+  });
+
+  it("applies a diversity penalty before choosing the next memory", () => {
+    const context = selectLearningContext(
+      [
+        memory("similar-best", "positive_example", "Product feedback makes product writing focused", {
+          effectiveness: 1,
+        }),
+        memory("similar-second", "positive_example", "Product feedback makes product writing concise", {
+          effectiveness: 0,
+        }),
+        memory("distinct", "positive_example", "Product lessons deserve a surprising customer story", {
+          effectiveness: 1,
+        }),
+      ],
+      {
+        userId: "user-a",
+        voiceProfileId: "voice-a",
+        brief: "Product feedback writing",
+        now: new Date("2026-10-29T00:00:00.000Z"),
+      },
+    );
+    expect(context.positiveExamples.map(({ id }) => id).slice(0, 2)).toEqual([
+      "similar-best",
+      "distinct",
+    ]);
+    expect(context.positiveExamples[2]?.scoreBreakdown.diversityPenalty).toBeGreaterThan(0);
+  });
 });

@@ -1,6 +1,6 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-29 18:25 IST
+Last updated: 2026-10-30 03:29 IST
 Coordinator: `/root`
 Status: In progress
 
@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-400, T-500, T-600, T-640 | Completed | 2026-10-29 18:14 IST | `AGENT_TRACKER.md`, shared contracts, app shell, integrated product, production deployment, viewport-safe auth layout |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-740 | In progress | 2026-10-30 03:29 IST | Integrated feedback contracts, API, generation retrieval, migration rollout and release validation |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
 | A-AI | LLM generation and personalization engineer | Inherited primary model — requested Astra override unavailable | T-300 | Completed | 2026-10-29 12:06 IST | `src/lib/ai/**`, `src/lib/learning/**`; 19 focused tests passed |
@@ -100,6 +100,10 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | A-UX | Workspace UX hardening | Inherited primary model | T-520 | Completed | 2026-10-29 12:09 IST | Explicit authorization, add-voice reset, stable idempotency key |
 | A-API | API persistence/idempotency/quota hardening | Inherited primary model | T-530 | Completed | 2026-10-29 12:11 IST | Generation replay, quotas, persistence checks, 7 focused tests |
 | A-AUTH | Email/password auth implementation | Inherited primary model — requested `gpt-6.1-sol` unavailable | T-630 | Completed | 2026-10-29 17:44 IST | Password route, registration confirmation UX, safe callback errors, auth contracts/tests |
+
+| A-FDATA | Feedback data and transaction specialist | Inherited primary model — requested `gpt-6.1-sol` unavailable | T-710 | Completed | 2026-10-30 03:29 IST | Additive migration, atomic idempotent RPC, authoritative state, audit links, SQL assertions and generated types |
+| A-FRANK | Memory-ranking and prompt specialist | Inherited primary model — requested `gpt-6.1-sol` unavailable | T-720 | Completed | 2026-10-30 03:29 IST | Deterministic contextual ranking, deduplication/conflict handling, bounded prompt packaging and 20 focused tests |
+| A-FUI | Feedback UI specialist | Inherited primary model — requested lower-cost `gpt-6-luna` unavailable | T-730 | Completed | 2026-10-30 03:29 IST | Reliable feedback actions, undo/edit/rejection UX and 5 focused component tests |
 
 ## C. Task board
 
@@ -120,6 +124,12 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-620 | History-to-Write restoration | A-ROOT | Primary | T-300, T-400 | Completed | Durable run/draft deep links; restored voice, brief, constraints, latest edits and feedback state | Lint/typecheck/build; 13 files/64 tests pass |
 | T-630 | Email/password auth and registration confirmation | A-AUTH with A-ROOT review | Inherited primary | T-100, T-600 | Completed | Password sign-in/signup route, confirmation UX, magic-link fallback, safe auth errors, hosted password policy | Lint/typecheck/build; 16 files/74 tests; live invalid-input smoke passed |
 | T-640 | Login viewport-fit responsive layout | A-ROOT | Primary | T-630 | Completed | Balanced 768px desktop auth card and compact short-phone registration layout | Zero document overflow at 375×667, 390×844, 1366×768, and 1440×900; lint/typecheck/74 tests/build pass |
+
+| T-700 | Feedback v2 contracts and architecture | A-ROOT | Primary | T-640 | Completed | Idempotent mutation contract, target state semantics, integration interfaces | Contract tests and cross-workstream interface review passed |
+| T-710 | Atomic feedback data layer | A-FDATA | Inherited primary | T-700 | Completed | Migration, state table, stable memory keys, idempotent RPC, audit links, DB evidence | Isolated PostgreSQL functional assertions passed; 31 pgTAP assertions authored; migration applied remotely |
+| T-720 | Deduplicated contextual memory ranking | A-FRANK | Inherited primary | T-700 | Completed | Goal/tone/topic/recency ranking, conflict/dedup/diversity, bounded prompt context | 20 focused learning/prompt tests, lint and typecheck passed |
+| T-730 | Reliable feedback UI loop | A-FUI | Inherited primary | T-700 | Completed | Pending/success/error states, selected/saved toggles, edit and rejection UX | 5 focused component tests, lint and diff check passed |
+| T-740 | Feedback integration, migration, validation and deploy | A-ROOT | Primary | T-710, T-720, T-730 | In progress | Integrated API/UI/generation path and production rollout | Full local check and remote migration verification passed; production deployment/smoke pending |
 
 ## D. Dependency and execution plan
 
@@ -163,6 +173,9 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | D-009 | Supabase Cron for hourly retention cleanup | Hourly Vercel Cron, daily Vercel Hobby Cron | Vercel Hobby rejects hourly schedules; database-local cron preserves hourly cleanup without a paid web-host plan | A-ROOT | 2026-10-29 |
 | D-010 | Supabase password auth with mandatory first-registration email confirmation | Custom password storage, password-only signup without verification | Reuses managed hashing/session cookies, preserves SSR auth, and verifies address ownership before first sign-in | A-AUTH/A-ROOT | 2026-10-29 |
 
+| D-011 | Separate current feedback state, append-only audit events, and stable-key learning memories | Disable buttons only, append one memory per click | Makes retries idempotent, preserves analytics, prevents repeated clicks from multiplying learning weight, and supports undo | A-ROOT | 2026-10-30 |
+| D-012 | Deterministic contextual ranking without mandatory embedding calls | Dump all memories, always call embeddings | Goal/tone/topic/recency ranking plus diversity is explainable and cheap; optional embeddings can be added later without blocking generation | A-ROOT | 2026-10-30 |
+
 ## F. Risks and blockers
 
 | ID | Description and impact | Owner | Mitigation | Status |
@@ -178,6 +191,9 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | R-009 | Feedback writes are not transactional and quota checks are not atomic | A-ROOT | Fail visibly now; add Postgres RPC transactions and atomic quota reservations before high volume | Open scale gate; not MVP blocker |
 | R-010 | Supabase built-in SMTP only delivers test emails to organization members and has a low hourly limit | A-ROOT | Configure a custom SMTP provider before public signup; code maps delivery/rate failures to safe actionable errors | Open production launch blocker for arbitrary email addresses |
 
+| R-011 | Feedback v2 changes live persisted behavior and requires a safe backfill | A-FDATA/A-ROOT | Additive migration, deterministic latest-event backfill, stable memory keys, remote verification before app rollout | Mitigated; migration applied and new tables verified remotely |
+| R-012 | Parallel feedback work can conflict on shared contracts | A-ROOT | Coordinator owns contracts/API/workspace/tracker; agents have disjoint file ownership and must report interface changes | Resolved during integration; full check passes |
+
 ## G. Integration and quality status
 
 ### Completed
@@ -192,6 +208,9 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 - Vercel production deployment is READY; landing/login return 200 and protected APIs return 401 when unauthenticated.
 - Email/password sign-in and confirmation-gated registration are implemented alongside magic links; hosted password policy is enforced at 8+ characters with letters and numbers.
 - Login and registration fit common laptop and phone viewports without document scrolling; Playwright verified sign-up at 375×667, 390×844, 1366×768, and 1440×900.
+- Feedback v2 separates append-only audit events from authoritative draft state and stable preference memory. Repeated requests are idempotent, deliberate repeat clicks do not multiply learning weight, negative feedback overrides conflicting positive memory, and generation records retain the exact ranked memories used.
+- Contextual memory selection is deterministic and free of embedding calls: goal, tone, topic, recency, evidence, effectiveness, conflict and diversity produce a bounded context of at most eight memories and roughly 1,200 tokens.
+- Latest `npm run check`: ESLint, TypeScript, 18 test files/90 tests, and the Next.js production build passed. The feedback v2 migration is applied to production Supabase and the new state/audit tables are present.
 
 ### Pending
 
@@ -230,6 +249,11 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-29 12:59 | Added durable History-to-Write deep links. A clicked draft now restores the authorized generation, active voice, brief, goal, tone, limit, hashtag and correction controls, latest edited text, saved/selected state, all drafts, and focuses the selected draft. Added two UI regression tests; 64 tests pass. |
 | 2026-10-29 17:44 | Requested `gpt-6.1-sol` auth agent launch was rejected by project entitlement before work ran; relaunched A-AUTH on the strongest inherited model available. |
 | 2026-10-29 17:45 | Added email/password sign-in and confirmation-gated registration, retained magic links, surfaced safe callback/auth errors, and aligned hosted Supabase password policy to 8+ letters and numbers. Custom SMTP remains the public-email delivery blocker. |
+
+| 2026-10-30 03:21 | Started feedback-loop v2. Frozen state/event/memory separation, stable-key upserts, low-cost deterministic ranking, and disjoint parallel workstreams. Requested Sol for schema/ranking and lower-cost Luna for bounded UI work. |
+| 2026-10-30 03:22 | Requested model overrides were rejected by project entitlement before task execution. Relaunched all three workstreams on the inherited model while preserving disjoint ownership and the same acceptance criteria. |
+| 2026-10-30 03:27 | Integrated feedback data, ranking and UI deliverables. Full validation passed: ESLint, TypeScript, 18 test files/90 tests, and Next.js production build. |
+| 2026-10-30 03:28 | Reconciled Supabase migration history without deleting schema objects, applied feedback v2 remotely, and verified `draft_feedback_state` and `generation_memory_links` in production. |
 
 ## Standard agent completion report contract
 

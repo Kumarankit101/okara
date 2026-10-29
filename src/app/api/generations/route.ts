@@ -40,41 +40,49 @@ interface DraftRow {
   style_note: string;
 }
 
-interface FeedbackRow {
+interface DraftFeedbackStateRow {
   draft_id: string;
-  event_type: string;
-  edited_text: string | null;
-  created_at: string;
+  current_text: string;
+  revision: number;
+  is_selected: boolean;
+  is_saved: boolean;
+  rating: "positive" | "negative" | null;
+  rejection_reason: string | null;
+  rejection_note: string | null;
 }
 
-function presentDraft(draft: DraftRow, feedback: FeedbackRow[]) {
-  const draftFeedback = feedback.filter((event) => event.draft_id === draft.id);
-  const latestEditedText = draftFeedback.find((event) => event.edited_text)?.edited_text;
+function presentDraft(draft: DraftRow, feedback: DraftFeedbackStateRow[]) {
+  const state = feedback.find((item) => item.draft_id === draft.id);
+  const text = state?.current_text ?? draft.text;
 
   return {
     id: draft.id,
-    text: latestEditedText ?? draft.text,
+    text,
     angle: draft.angle,
-    characterCount: Array.from(latestEditedText ?? draft.text).length,
+    characterCount: Array.from(text).length,
     styleNote: draft.style_note,
     safetyFlags: [],
-    isSaved: draftFeedback.some((event) => event.event_type === "saved"),
-    isSelected: draftFeedback.some((event) => event.event_type === "selected"),
+    isSaved: state?.is_saved ?? false,
+    isSelected: state?.is_selected ?? false,
+    isLiked: state?.rating === "positive",
+    isRejected: state?.rating === "negative",
+    rejectionReason: state?.rejection_reason ?? null,
+    rejectionNote: state?.rejection_note ?? null,
+    revision: state?.revision ?? 0,
   };
 }
 
-async function loadDraftFeedback(
+async function loadDraftFeedbackState(
   supabase: SupabaseClient,
   userId: string,
   draftIds: string[],
-): Promise<FeedbackRow[]> {
+): Promise<DraftFeedbackStateRow[]> {
   if (!draftIds.length) return [];
   const { data, error } = await supabase
-    .from("feedback_events")
-    .select("draft_id,event_type,edited_text,created_at")
+    .from("draft_feedback_state")
+    .select("draft_id,current_text,revision,is_selected,is_saved,rating,rejection_reason,rejection_note")
     .eq("user_id", userId)
-    .in("draft_id", draftIds)
-    .order("created_at", { ascending: false });
+    .in("draft_id", draftIds);
   if (error) throw error;
   return data;
 }
@@ -101,7 +109,7 @@ async function replayCompletedRun(
 ) {
   const { data: drafts, error } = await supabase
     .from("drafts")
-    .select("id,text,angle,character_count,style_note")
+    .select("id,generation_run_id,text,angle,character_count,style_note")
     .eq("user_id", userId)
     .eq("generation_run_id", runId)
     .order("position");
@@ -109,17 +117,15 @@ async function replayCompletedRun(
   if (drafts.length !== 5) {
     throw new Error("Completed generation is missing persisted drafts.");
   }
+  const feedback = await loadDraftFeedbackState(
+    supabase,
+    userId,
+    drafts.map((draft) => draft.id),
+  );
   return Response.json({
     runId,
     replayed: true,
-    drafts: drafts.map((draft) => ({
-      id: draft.id,
-      text: draft.text,
-      angle: draft.angle,
-      characterCount: draft.character_count,
-      styleNote: draft.style_note,
-      safetyFlags: [],
-    })),
+    drafts: drafts.map((draft) => presentDraft(draft, feedback)),
   });
 }
 
@@ -172,6 +178,10 @@ function memoryKind(kind: string): PreferenceMemoryKind {
     : "preference";
 }
 
+function persistedMemoryKind(kind: PreferenceMemoryKind) {
+  return kind === "preference" ? ("aggregate_summary" as const) : kind;
+}
+
 export async function GET(request: Request) {
   try {
     const user = await requireUser();
@@ -213,7 +223,7 @@ export async function GET(request: Request) {
         return apiError(404, "VOICE_PROFILE_NOT_FOUND", "The voice for this generation was deleted.");
       }
 
-      const feedback = await loadDraftFeedback(
+      const feedback = await loadDraftFeedbackState(
         supabase,
         user.id,
         drafts.map((draft) => draft.id),
@@ -267,7 +277,7 @@ export async function GET(request: Request) {
       ]);
     if (draftError) throw draftError;
     if (profileError) throw profileError;
-    const feedback = await loadDraftFeedback(
+    const feedback = await loadDraftFeedbackState(
       supabase,
       user.id,
       drafts.map((draft) => draft.id),
@@ -352,7 +362,7 @@ export async function POST(request: Request) {
           .limit(12),
         supabase
           .from("preference_memories")
-          .select("id,user_id,voice_profile_id,kind,content_json,weight,active,created_at,updated_at")
+          .select("id,user_id,voice_profile_id,kind,content_json,weight,active,memory_key,source_draft_id,objective,tone_intensity,evidence_count,created_at,updated_at")
           .eq("voice_profile_id", profile.id)
           .eq("user_id", user.id)
           .eq("active", true)
@@ -370,6 +380,18 @@ export async function POST(request: Request) {
       content: memory.content_json as Record<string, unknown>,
       weight: Number(memory.weight),
       active: memory.active,
+      memoryKey: memory.memory_key ?? undefined,
+      sourceDraftId: memory.source_draft_id ?? undefined,
+      objective:
+        memory.objective === "engage" ||
+        memory.objective === "educate" ||
+        memory.objective === "announce" ||
+        memory.objective === "persuade" ||
+        memory.objective === "entertain"
+          ? memory.objective
+          : undefined,
+      toneIntensity: memory.tone_intensity ?? undefined,
+      evidenceCount: memory.evidence_count,
       createdAt: memory.created_at,
       updatedAt: memory.updated_at,
     }));
@@ -377,6 +399,8 @@ export async function POST(request: Request) {
       userId: user.id,
       voiceProfileId: profile.id,
       brief: input.brief,
+      objective: input.objective,
+      toneIntensity: input.toneIntensity,
     });
 
     if (existingRun?.status === "failed") {
@@ -444,6 +468,34 @@ export async function POST(request: Request) {
     if (!runId) throw new Error("Generation run was not initialized.");
     const activeRunId = runId;
     const startedAt = performance.now();
+
+    const selectedMemories = [
+      ...learningContext.positiveExamples,
+      ...learningContext.preferences,
+      ...learningContext.negativeRules,
+    ];
+    const { error: oldLinksError } = await supabase
+      .from("generation_memory_links")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("generation_run_id", activeRunId);
+    if (oldLinksError) throw oldLinksError;
+    if (selectedMemories.length) {
+      const { error: linkError } = await supabase
+        .from("generation_memory_links")
+        .insert(
+          selectedMemories.map((memory, promptPosition) => ({
+            user_id: user.id,
+            generation_run_id: activeRunId,
+            memory_id: memory.id,
+            category: persistedMemoryKind(memory.kind),
+            final_score: memory.score,
+            score_components_json: memory.scoreBreakdown as unknown as Json,
+            prompt_position: promptPosition,
+          })),
+        );
+      if (linkError) throw linkError;
+    }
 
     const result = await generateDrafts(getOpenAIProvider(), {
       request: input,

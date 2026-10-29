@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Workspace } from "./workspace";
@@ -101,6 +101,8 @@ describe("Workspace history restoration", () => {
       "checked",
       true,
     );
-    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+    await waitFor(() =>
+      expect(Element.prototype.scrollIntoView).toHaveBeenCalled(),
+    );
   });
 });

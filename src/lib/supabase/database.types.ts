@@ -238,6 +238,8 @@ export type Database = {
           event_type: Database["public"]["Enums"]["feedback_event_type"];
           reason_code: Database["public"]["Enums"]["feedback_reason_code"] | null;
           edited_text: string | null;
+          client_event_id: string | null;
+          event_version: number;
           metadata_json: Json;
           created_at: string;
         };
@@ -249,6 +251,8 @@ export type Database = {
           event_type: Database["public"]["Enums"]["feedback_event_type"];
           reason_code?: Database["public"]["Enums"]["feedback_reason_code"] | null;
           edited_text?: string | null;
+          client_event_id?: string | null;
+          event_version?: number;
           metadata_json?: Json;
           created_at?: string;
         };
@@ -256,6 +260,8 @@ export type Database = {
           event_type?: Database["public"]["Enums"]["feedback_event_type"];
           reason_code?: Database["public"]["Enums"]["feedback_reason_code"] | null;
           edited_text?: string | null;
+          client_event_id?: string | null;
+          event_version?: number;
           metadata_json?: Json;
         };
         Relationships: [
@@ -275,6 +281,83 @@ export type Database = {
           },
         ];
       };
+      draft_feedback_state: {
+        Row: {
+          id: string;
+          user_id: string;
+          voice_profile_id: string;
+          generation_run_id: string;
+          draft_id: string;
+          current_text: string;
+          revision: number;
+          is_selected: boolean;
+          is_saved: boolean;
+          rating: "positive" | "negative" | null;
+          rejection_reason: Database["public"]["Enums"]["feedback_reason_code"] | null;
+          rejection_note: string | null;
+          last_event_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          voice_profile_id: string;
+          generation_run_id: string;
+          draft_id: string;
+          current_text: string;
+          revision?: number;
+          is_selected?: boolean;
+          is_saved?: boolean;
+          rating?: "positive" | "negative" | null;
+          rejection_reason?: Database["public"]["Enums"]["feedback_reason_code"] | null;
+          rejection_note?: string | null;
+          last_event_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          current_text?: string;
+          revision?: number;
+          is_selected?: boolean;
+          is_saved?: boolean;
+          rating?: "positive" | "negative" | null;
+          rejection_reason?: Database["public"]["Enums"]["feedback_reason_code"] | null;
+          rejection_note?: string | null;
+          last_event_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "draft_feedback_state_voice_profile_user_fk";
+            columns: ["voice_profile_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "voice_profiles";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "draft_feedback_state_generation_run_user_fk";
+            columns: ["generation_run_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "generation_runs";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "draft_feedback_state_draft_user_fk";
+            columns: ["draft_id", "user_id"];
+            isOneToOne: true;
+            referencedRelation: "drafts";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "draft_feedback_state_last_event_user_fk";
+            columns: ["last_event_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "feedback_events";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
       preference_memories: {
         Row: {
           id: string;
@@ -286,6 +369,11 @@ export type Database = {
           weight: number;
           embedding: string | null;
           active: boolean;
+          memory_key: string | null;
+          source_draft_id: string | null;
+          objective: string | null;
+          tone_intensity: number | null;
+          evidence_count: number;
           created_at: string;
           updated_at: string;
         };
@@ -299,6 +387,11 @@ export type Database = {
           weight?: number;
           embedding?: string | null;
           active?: boolean;
+          memory_key?: string | null;
+          source_draft_id?: string | null;
+          objective?: string | null;
+          tone_intensity?: number | null;
+          evidence_count?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -309,6 +402,11 @@ export type Database = {
           weight?: number;
           embedding?: string | null;
           active?: boolean;
+          memory_key?: string | null;
+          source_draft_id?: string | null;
+          objective?: string | null;
+          tone_intensity?: number | null;
+          evidence_count?: number;
           updated_at?: string;
         };
         Relationships: [
@@ -324,6 +422,61 @@ export type Database = {
             columns: ["source_feedback_event_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "feedback_events";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "preference_memories_source_draft_user_fk";
+            columns: ["source_draft_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "drafts";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      generation_memory_links: {
+        Row: {
+          id: string;
+          user_id: string;
+          generation_run_id: string;
+          memory_id: string;
+          category: Database["public"]["Enums"]["preference_memory_kind"];
+          final_score: number;
+          score_components_json: Json;
+          prompt_position: number;
+          outcome: "positive" | "negative" | "neutral" | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          generation_run_id: string;
+          memory_id: string;
+          category: Database["public"]["Enums"]["preference_memory_kind"];
+          final_score: number;
+          score_components_json?: Json;
+          prompt_position: number;
+          outcome?: "positive" | "negative" | "neutral" | null;
+          created_at?: string;
+        };
+        Update: {
+          final_score?: number;
+          score_components_json?: Json;
+          prompt_position?: number;
+          outcome?: "positive" | "negative" | "neutral" | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "generation_memory_links_generation_run_user_fk";
+            columns: ["generation_run_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "generation_runs";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "generation_memory_links_memory_user_fk";
+            columns: ["memory_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "preference_memories";
             referencedColumns: ["id", "user_id"];
           },
         ];
@@ -361,6 +514,18 @@ export type Database = {
     };
     Views: Record<never, never>;
     Functions: {
+      apply_feedback_v2: {
+        Args: {
+          p_draft_id: string;
+          p_event_type: Database["public"]["Enums"]["feedback_event_type"];
+          p_client_event_id: string;
+          p_active?: boolean;
+          p_edited_text?: string | null;
+          p_reason_code?: Database["public"]["Enums"]["feedback_reason_code"] | null;
+          p_reason_note?: string | null;
+        };
+        Returns: Json;
+      };
       delete_expired_source_posts: {
         Args: Record<PropertyKey, never>;
         Returns: number;
@@ -381,10 +546,14 @@ export type Database = {
       feedback_reason_code:
         | "too_generic"
         | "too_long"
+        | "too_short"
         | "wrong_tone"
+        | "too_soft"
+        | "too_strong"
         | "repetitive"
         | "inaccurate"
         | "too_promotional"
+        | "weak_opening"
         | "other";
       preference_memory_kind:
         | "positive_example"

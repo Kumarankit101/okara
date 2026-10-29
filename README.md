@@ -12,7 +12,7 @@ Okara is a private AI writing workspace that turns an X handle or user-provided 
 - **Supabase Auth + Postgres + RLS** provides confirmed email/password and passwordless login, durable per-user data, and database-enforced isolation.
 - **OpenAI Responses API + Structured Outputs** returns a validated five-draft contract from a server-only call. The model is configurable and defaults to `gpt-5.6-terra` at low reasoning.
 - **Official X API v2 only** is used for handle ingestion. Pasted samples remain a first-class fallback when an X credential is unavailable or the user prefers owned content.
-- **Retrieval-based learning** stores explicit preferences, selected examples, rejection signals, and edit patterns. A small, ranked context is added to future prompts for the same user and voice profile. This is cheaper, reversible, and auditable compared with early fine-tuning.
+- **Retrieval-based learning** separates audit events, current draft state, and stable preference memories. It deduplicates repeated actions and adds only a small, contextually ranked set to future prompts for the same user and voice profile. This is cheaper, reversible, and auditable compared with early fine-tuning.
 
 ```text
 Browser
@@ -33,6 +33,15 @@ Browser
 6. Reuse the workspace: ranked feedback memories influence only that user's future generations for that voice profile.
 7. Use Settings to update account details, review retention behavior, or delete a voice and its associated data.
 8. Open any historical draft to restore its voice, brief, controls, latest edits, and full five-draft workspace.
+
+## How the feedback loop learns
+
+- Save, select, like, reject, copy-after-edit, and explicit edits are recorded as append-only audit events while a separate row stores each draft's current state.
+- Every client action has an idempotency key. Network retries replay safely; repeated deliberate clicks remain auditable but update the same stable memory instead of multiplying its influence.
+- Rejection reasons and user-written revisions create stronger evidence than unchanged copies. A rejection suppresses conflicting positive memory until the user undoes it or gives new positive feedback.
+- Before generation, deterministic ranking scores relevant memories by topic, goal, tone, recency, evidence, and past effectiveness, then removes conflicts and near-duplicates and enforces source diversity.
+- The prompt receives at most eight memories (roughly 1,200 tokens). No embedding call is required, keeping retrieval latency and provider cost near zero; the generation model remains the only paid inference call in this path.
+- Each generation stores which memories were used and their score breakdown, making the behavior inspectable and suitable for later offline evaluation.
 
 ## Local setup
 
@@ -79,7 +88,7 @@ For password registration, keep Supabase **Confirm email** enabled and align the
 npm run check
 ```
 
-This runs ESLint, TypeScript, the unit/integration test suite, and a production build. The SQL pgTAP suite in `supabase/tests/database/rls.test.sql` additionally checks RLS, ownership constraints, append-only feedback, and privileged usage writes when a local or linked Postgres instance is available.
+This runs ESLint, TypeScript, the unit/integration test suite, and a production build. SQL pgTAP suites in `supabase/tests/database/` additionally check RLS, ownership constraints, atomic feedback behavior, append-only auditing, and privileged usage writes when a local or linked Postgres instance is available.
 
 ## Data and safety choices
 

@@ -116,21 +116,74 @@ export const feedbackEventTypeSchema = z.enum([
 export const feedbackReasonSchema = z.enum([
   "too_generic",
   "too_long",
+  "too_short",
   "wrong_tone",
+  "too_soft",
+  "too_strong",
   "repetitive",
   "inaccurate",
   "too_promotional",
+  "weak_opening",
   "other",
 ]);
 
-export const feedbackInputSchema = z.object({
-  draftId: z.string().uuid(),
-  eventType: feedbackEventTypeSchema,
-  reasonCode: feedbackReasonSchema.optional(),
-  editedText: z.string().trim().min(1).max(500).optional(),
-});
+export const feedbackInputSchema = z
+  .object({
+    draftId: z.string().uuid(),
+    eventType: feedbackEventTypeSchema,
+    clientEventId: z.string().uuid(),
+    active: z.boolean().default(true),
+    reasonCode: feedbackReasonSchema.optional(),
+    reasonNote: z.string().trim().max(500).optional(),
+    editedText: z.string().trim().min(1).max(500).optional(),
+  })
+  .superRefine((input, context) => {
+    if (input.eventType === "disliked" && input.active && !input.reasonCode) {
+      context.addIssue({
+        code: "custom",
+        path: ["reasonCode"],
+        message: "Choose why the draft is not right",
+      });
+    }
+    if (input.eventType === "edited" && input.active && !input.editedText) {
+      context.addIssue({
+        code: "custom",
+        path: ["editedText"],
+        message: "Edited feedback requires the revised text",
+      });
+    }
+    if (input.eventType === "copied" && !input.active) {
+      context.addIssue({
+        code: "custom",
+        path: ["active"],
+        message: "Copy events cannot be undone",
+      });
+    }
+  });
 
 export type FeedbackInput = z.infer<typeof feedbackInputSchema>;
+
+export const feedbackStateSchema = z.object({
+  selected: z.boolean(),
+  saved: z.boolean(),
+  liked: z.boolean(),
+  rejected: z.boolean(),
+  currentText: z.string().min(1).max(500),
+  revision: z.number().int().nonnegative(),
+  reasonCode: feedbackReasonSchema.nullable(),
+  reasonNote: z.string().nullable(),
+});
+
+export type FeedbackState = z.infer<typeof feedbackStateSchema>;
+
+export const feedbackResponseSchema = z.object({
+  feedbackId: z.string().uuid(),
+  replayed: z.boolean(),
+  memoryUpdated: z.boolean(),
+  state: feedbackStateSchema,
+});
+
+export type FeedbackResponse = z.infer<typeof feedbackResponseSchema>;
 
 export const apiErrorSchema = z.object({
   error: z.object({

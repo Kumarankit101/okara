@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  feedbackInputSchema,
   generationOutputSchema,
   handleSchema,
   pastedSamplesSchema,
@@ -27,6 +28,36 @@ describe("shared domain contracts", () => {
     expect(() => profileSettingsSchema.parse({ displayName: "" })).toThrow();
     expect(() =>
       profileSettingsSchema.parse({ displayName: "a".repeat(81) }),
+    ).toThrow();
+  });
+
+  it("requires idempotent, explicit negative feedback", () => {
+    const base = {
+      draftId: "8c729106-7aaf-490d-8973-e119bb144e01",
+      clientEventId: "6dc28089-29b6-4f48-9be8-e4fa0e7d8c71",
+    };
+    expect(() =>
+      feedbackInputSchema.parse({ ...base, eventType: "disliked" }),
+    ).toThrow();
+    expect(
+      feedbackInputSchema.parse({
+        ...base,
+        eventType: "disliked",
+        reasonCode: "too_soft",
+      }),
+    ).toMatchObject({ active: true, reasonCode: "too_soft" });
+  });
+
+  it("allows feedback toggles but not copy undo", () => {
+    const base = {
+      draftId: "8c729106-7aaf-490d-8973-e119bb144e01",
+      clientEventId: "6dc28089-29b6-4f48-9be8-e4fa0e7d8c71",
+    };
+    expect(
+      feedbackInputSchema.parse({ ...base, eventType: "saved", active: false }),
+    ).toMatchObject({ active: false });
+    expect(() =>
+      feedbackInputSchema.parse({ ...base, eventType: "copied", active: false }),
     ).toThrow();
   });
 });
