@@ -1,8 +1,8 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-30 04:20 IST
+Last updated: 2026-10-30 04:21 IST
 Coordinator: `/root`
-Status: In progress
+Status: Completed
 
 This file is the single source of truth for project execution. Only the coordinator edits it. Agents report structured completion results to the coordinator, who verifies evidence and records updates here.
 
@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-780 | In progress | 2026-10-30 04:20 IST | Human-readable history tone labels, integration and production validation |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-780 | Completed | 2026-10-30 04:21 IST | Live human-readable history tone labels, integration and production validation |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
 | A-AI | LLM generation and personalization engineer | Inherited primary model — requested Astra override unavailable | T-300 | Completed | 2026-10-29 12:06 IST | `src/lib/ai/**`, `src/lib/learning/**`; 19 focused tests passed |
@@ -134,7 +134,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-750 | Human-readable memory page | A-ROOT | Primary | T-740 | Completed | Concise grouped memory UI, meaningful evidence labels, before/after edits and hidden low-information records | 7 focused tests; full 20-file/97-test check; authenticated production browser QA and clean console |
 | T-760 | Manage writing preferences | A-ROOT | Primary | T-750 | Completed | Canonical `/preferences` page, reversible per-preference controls, preserved feedback audit and `/memory` compatibility redirect | 21 test files/101 tests, lint, typecheck and build passed; READY deployment and authenticated production QA |
 | T-770 | Scalable generation history | A-ROOT | Primary | T-620 | Completed | Compact brief-first list, server search/pagination, on-demand details drawer and preserved History-to-Write links | 21 test files/102 tests, lint, typecheck and build passed; READY deploy, desktop/mobile authenticated QA and clean console |
-| T-780 | Human-readable history tone | A-HTONE with A-ROOT review | Inherited primary at low reasoning | T-770 | In progress | Replace raw tone intensity fractions with canonical user-facing labels while preserving numeric generation input | Full 21-file/102-test check, lint, typecheck and build passed; production QA pending |
+| T-780 | Human-readable history tone | A-HTONE with A-ROOT review | Inherited primary at low reasoning | T-770 | Completed | Replace raw tone intensity fractions with canonical user-facing labels while preserving numeric generation input | Full 21-file/102-test check, lint, typecheck and build; READY deploy and authenticated production QA with clean console |
 
 ## D. Dependency and execution plan
 
@@ -226,6 +226,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 - Latest `npm run check`: ESLint, TypeScript, 21 test files/101 tests, and the Next.js production build passed. Authenticated production QA verified the management mode against real data without changing any live preference.
 - History now presents compact brief-first generation summaries, searches briefs on the server, paginates 20 at a time, and loads one generation’s metadata and drafts only when its responsive right-side drawer opens. Existing run/draft restoration links remain intact.
 - Latest `npm run check`: ESLint, TypeScript, 21 test files/102 tests, and the Next.js production build passed. Authenticated desktop/mobile production QA verified list, search, drawer and draft links with a clean console.
+- History tone intensity now appears as Restrained, Calm, Balanced, Confident or Bold instead of an unexplained fraction; the original 1–5 value remains the internal generation input.
 
 ### Pending
 
@@ -277,6 +278,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-30 04:15 | Started T-770. Replaced draft-heavy history cards with brief-first summaries, server-side brief search, 20-item pagination, and an accessible right-side drawer that loads one generation’s metadata and drafts on demand. Full local validation passed with 21 test files/102 tests, lint, typecheck and production build. |
 | 2026-10-30 04:17 | T-770 completed and deployed in commit `f4b8629`. Authenticated production QA used real history data to verify compact summaries, server search, five on-demand drafts, preserved Write links, a full-width 390×844 mobile drawer, and an empty warning/error console; no account data was changed. |
 | 2026-10-30 04:20 | Started T-780. The requested Luna agent could not run because that model is not enabled for the project; a replacement agent used the available inherited model at low reasoning. It mapped tone levels 1–5 to Restrained, Calm, Balanced, Confident and Bold, and the coordinator verified the full 21-file/102-test release check. |
+| 2026-10-30 04:21 | T-780 completed and deployed in commit `9ce64fc`. Authenticated production QA verified “Tone: Confident,” confirmed the old “Tone: 4/5” label is absent, and found no browser console warnings or errors. |
 
 ## Standard agent completion report contract
 
