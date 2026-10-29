@@ -1,6 +1,6 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-29 18:14 IST
+Last updated: 2026-10-29 18:25 IST
 Coordinator: `/root`
 Status: In progress
 
@@ -119,7 +119,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-610 | Settings route and account/data controls | A-ROOT | Primary | T-100, T-400 | Completed | Account details, voice deletion, privacy links, sign-out, responsive navigation | Lint/typecheck/build; 11 files/62 tests; Playwright verified protected route reaches sign-in instead of 404 |
 | T-620 | History-to-Write restoration | A-ROOT | Primary | T-300, T-400 | Completed | Durable run/draft deep links; restored voice, brief, constraints, latest edits and feedback state | Lint/typecheck/build; 13 files/64 tests pass |
 | T-630 | Email/password auth and registration confirmation | A-AUTH with A-ROOT review | Inherited primary | T-100, T-600 | Completed | Password sign-in/signup route, confirmation UX, magic-link fallback, safe auth errors, hosted password policy | Lint/typecheck/build; 16 files/74 tests; live invalid-input smoke passed |
-| T-640 | Login viewport-fit responsive layout | A-ROOT | Primary | T-630 | Completed | Two-column desktop auth card and compact short-phone registration layout | Zero document overflow at 375×667, 390×844, 1366×768, and 1440×900; lint/typecheck/74 tests/build pass |
+| T-640 | Login viewport-fit responsive layout | A-ROOT | Primary | T-630 | Completed | Balanced 768px desktop auth card and compact short-phone registration layout | Zero document overflow at 375×667, 390×844, 1366×768, and 1440×900; lint/typecheck/74 tests/build pass |
 
 ## D. Dependency and execution plan
 
@@ -221,6 +221,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-29 12:12 | Playwright verified desktop and 390px mobile landing layouts plus graceful login configuration error. Supabase dashboard project creation is staged pending required user confirmation for persistent credentials. |
 | 2026-10-29 12:12 | Created private GitHub repository and pushed `main`: `https://github.com/Kumarankit101/okara`. Production deployment remains blocked only on Supabase project confirmation and Vercel authentication. |
 | 2026-10-29 18:14 | T-640 completed: converted the tall auth card into a two-column desktop layout with a height-aware compact phone layout. Playwright measured zero overflow across four representative viewports; full 16-file/74-test check and production build passed. |
+| 2026-10-29 18:25 | Refined T-640 after visual review: reduced the desktop auth panel from 1024px to 768px, rebalanced its columns, and shortened the supporting copy. Playwright confirmed the narrower 1366×768 layout and unchanged zero-overflow 375×667 layout. |
 | 2026-10-29 12:24 | Created and linked production Supabase project, applied the schema, and verified all eight tables have forced RLS with four ownership policies each. |
 | 2026-10-29 12:29 | Vercel Hobby rejected hourly cron; moved the job to Supabase Cron and verified `okara-delete-expired-source-posts` is active on `0 * * * *`. |
 | 2026-10-29 12:33 | Fixed cross-platform install by making the macOS Rolldown binding optional; full check passed again with 10 files and 60 tests. |
