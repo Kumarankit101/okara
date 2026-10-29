@@ -1,8 +1,8 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-30 04:29 IST
+Last updated: 2026-10-30 04:31 IST
 Coordinator: `/root`
-Status: In progress
+Status: Completed
 
 This file is the single source of truth for project execution. Only the coordinator edits it. Agents report structured completion results to the coordinator, who verifies evidence and records updates here.
 
@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-814 | In progress | 2026-10-30 04:26 IST | Global+voice retrieval, cross-workstream integration, migration rollout and production validation |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-814 | Completed | 2026-10-30 04:31 IST | Live Global+voice retrieval, cross-workstream integration, migration rollout and responsive production validation |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
 | A-AI | LLM generation and personalization engineer | Inherited primary model — requested Astra override unavailable | T-300 | Completed | 2026-10-29 12:06 IST | `src/lib/ai/**`, `src/lib/learning/**`; 19 focused tests passed |
@@ -142,7 +142,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-811 | Preference scope database | A-PSDATA | Inherited primary at low reasoning | T-800 | Completed | Additive migration, types and SQL assertions | Targeted compile/lint/diff checks; 14 pgTAP assertions authored; remote migration applied |
 | T-812 | Preference scope API | A-PSAPI | Inherited primary at low reasoning | T-800, T-811 contract | Completed | User-scoped GET plus setActive/setScope/copy mutations | 12 focused route tests and full check pass |
 | T-813 | Preference scope UI | A-PSUI | Inherited primary at low reasoning | T-800, T-812 contract | Completed | Filters, scope badges, multi-target move/copy UI | 6 focused component tests and full check pass |
-| T-814 | Global preference retrieval and release | A-ROOT | Primary | T-811, T-812, T-813 | In progress | Retrieve Global+selected Voice memories, integrate, migrate, validate and deploy | 21 files/115 tests, lint/typecheck/build pass; migration applied; deployment and production QA pending |
+| T-814 | Global preference retrieval and release | A-ROOT | Primary | T-811, T-812, T-813 | Completed | Retrieve Global+selected Voice memories, integrate, migrate, validate and deploy | 21 files/115 tests, lint/typecheck/build; migration aligned; READY deploy and authenticated desktop/mobile QA |
 
 ## D. Dependency and execution plan
 
@@ -237,6 +237,8 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 - History now presents compact brief-first generation summaries, searches briefs on the server, paginates 20 at a time, and loads one generation’s metadata and drafts only when its responsive right-side drawer opens. Existing run/draft restoration links remain intact.
 - Latest `npm run check`: ESLint, TypeScript, 21 test files/102 tests, and the Next.js production build passed. Authenticated desktop/mobile production QA verified list, search, drawer and draft links with a clean console.
 - History tone intensity now appears as Restrained, Calm, Balanced, Confident or Bold instead of an unexplained fraction; the original 1–5 value remains the internal generation input.
+- Preferences now support Global and per-voice scope. Users can filter by scope, move an original, or create independent copies across multiple voices; generation combines Global with the selected voice and retains the existing bounded ranking/token budget.
+- The preference-scope migration is applied in production. Authenticated production QA verified scope badges, filters, enabled Move/Copy controls, responsive mobile layout and a clean console without mutating live preference data.
 
 ### Pending
 
@@ -291,6 +293,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-30 04:21 | T-780 completed and deployed in commit `9ce64fc`. Authenticated production QA verified “Tone: Confident,” confirmed the old “Tone: 4/5” label is absent, and found no browser console warnings or errors. |
 | 2026-10-30 04:26 | Completed T-800 architecture and launched T-811/T-812/T-813 in parallel on the available model at low reasoning because Luna is not enabled. Frozen Global/Voice semantics, independent multi-target copies, ownership checks, deletion survival and bounded Global+Voice prompt retrieval before implementation. |
 | 2026-10-30 04:29 | Integrated T-811/T-812/T-813, reconciled strict API/UI scope payloads and duplicate-safe move keys, added Global+selected-Voice retrieval, and passed the full 21-file/115-test release check. Dry run identified exactly one additive migration; applied `20261030000200_preference_scopes.sql` remotely and confirmed migration history is aligned. |
+| 2026-10-30 04:31 | T-814 completed and deployed in commit `e052b0f`. Authenticated production QA verified real voice badges and filters, Move and independent multi-target Copy controls, a 390×844 responsive scope sheet, and a clean console. No live preference was moved or copied during QA. |
 
 ## Standard agent completion report contract
 
