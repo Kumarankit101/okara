@@ -186,7 +186,8 @@ export async function GET(request: Request) {
   try {
     const user = await requireUser();
     const supabase = await createClient();
-    const requestedRunId = new URL(request.url).searchParams.get("runId");
+    const searchParams = new URL(request.url).searchParams;
+    const requestedRunId = searchParams.get("runId");
 
     if (requestedRunId) {
       const runId = z.string().uuid().parse(requestedRunId);
@@ -251,51 +252,59 @@ export async function GET(request: Request) {
       });
     }
 
-    const { data: runs, error } = await supabase
-      .from("generation_runs")
-      .select("id,brief,created_at,voice_profile_id,constraints_json")
-      .eq("user_id", user.id)
-      .eq("status", "completed")
-      .order("created_at", { ascending: false })
-      .limit(30);
-    if (error) throw error;
-    if (!runs.length) return Response.json({ runs: [] });
+    const listInput = z
+      .object({
+        limit: z.coerce.number().int().min(1).max(50).default(20),
+        offset: z.coerce.number().int().min(0).max(10_000).default(0),
+        query: z.string().trim().max(120).default(""),
+      })
+      .parse({
+        limit: searchParams.get("limit") ?? undefined,
+        offset: searchParams.get("offset") ?? undefined,
+        query: searchParams.get("query") ?? undefined,
+      });
 
-    const runIds = runs.map((run) => run.id);
+    let runsQuery = supabase
+      .from("generation_runs")
+      .select("id,brief,created_at,voice_profile_id,constraints_json", {
+        count: "exact",
+      })
+      .eq("user_id", user.id)
+      .eq("status", "completed");
+
+    if (listInput.query) {
+      runsQuery = runsQuery.ilike("brief", `%${listInput.query}%`);
+    }
+
+    const { data: runs, error, count } = await runsQuery
+      .order("created_at", { ascending: false })
+      .range(listInput.offset, listInput.offset + listInput.limit - 1);
+    if (error) throw error;
+    if (!runs.length) {
+      return Response.json({ runs: [], hasMore: false, total: count ?? 0 });
+    }
+
     const profileIds = [...new Set(runs.map((run) => run.voice_profile_id))];
-    const [{ data: drafts, error: draftError }, { data: profiles, error: profileError }] =
-      await Promise.all([
-        supabase
-          .from("drafts")
-          .select("id,generation_run_id,text,angle,character_count,style_note")
-          .in("generation_run_id", runIds)
-          .order("position"),
-        supabase
-          .from("voice_profiles")
-          .select("id,display_name,handle")
-          .in("id", profileIds),
-      ]);
-    if (draftError) throw draftError;
+    const { data: profiles, error: profileError } = await supabase
+      .from("voice_profiles")
+      .select("id,display_name,handle")
+      .in("id", profileIds);
     if (profileError) throw profileError;
-    const feedback = await loadDraftFeedbackState(
-      supabase,
-      user.id,
-      drafts.map((draft) => draft.id),
-    );
 
     return Response.json({
       runs: runs.map((run) => {
         const profile = profiles.find((item) => item.id === run.voice_profile_id);
+        const restoredRequest = generationRequestSchema.safeParse(run.constraints_json);
         return {
           id: run.id,
           brief: run.brief,
           createdAt: run.created_at,
           profileName: profile?.handle ? `@${profile.handle}` : profile?.display_name ?? "Voice",
-          drafts: drafts
-            .filter((draft) => draft.generation_run_id === run.id)
-            .map((draft) => presentDraft(draft, feedback)),
+          objective: restoredRequest.success ? restoredRequest.data.objective : "engage",
         };
       }),
+      hasMore: listInput.offset + runs.length < (count ?? 0),
+      total: count ?? runs.length,
     });
   } catch (error) {
     return routeErrorResponse(error);

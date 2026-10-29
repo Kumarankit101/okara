@@ -14,7 +14,7 @@ export default function HistoryPage() {
         History
       </h1>
       <p className="mt-3 max-w-2xl leading-7 text-muted">
-        Revisit every brief, compare angles, and recover the drafts you saved.
+        Find a past brief, then open its details and drafts without scanning a wall of posts.
       </p>
       <div className="mt-8">
         <HistoryView />
