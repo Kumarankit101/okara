@@ -6,6 +6,7 @@ import {
   ChevronDown,
   FileText,
   LoaderCircle,
+  PencilLine,
   Plus,
   RefreshCw,
   Sparkles,
@@ -15,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { VoiceEditor, type VoiceEditorResult } from "@/components/voices/voice-editor";
 import {
   DraftCard,
   type DraftRecord,
@@ -74,6 +76,8 @@ export function Workspace({
   const [restoredAt, setRestoredAt] = useState<string | null>(null);
   const [profilesLoading, setProfilesLoading] = useState(true);
   const [error, setError] = useState("");
+  const [editingVoice, setEditingVoice] = useState(false);
+  const [voiceNotice, setVoiceNotice] = useState("");
   const generationInFlight = useRef(false);
   const generationAttempt = useRef<{
     fingerprint: string;
@@ -310,6 +314,26 @@ export function Workspace({
     return state;
   }
 
+  function applyVoiceUpdate(result: VoiceEditorResult) {
+    setProfiles((current) =>
+      current.map((profile) =>
+        profile.id === result.profile.id
+          ? {
+              ...profile,
+              handle: result.profile.handle,
+              displayName: result.profile.displayName,
+            }
+          : profile,
+      ),
+    );
+    setVoiceNotice(
+      result.rebuilt
+        ? `${result.profile.displayName} was rebuilt from ${result.sampleCount} samples.`
+        : `${result.profile.displayName} was renamed.`,
+    );
+    setEditingVoice(false);
+  }
+
   return (
     <main className="mx-auto w-full max-w-[1500px] px-5 py-8 sm:px-8 lg:px-10 lg:py-10">
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -461,24 +485,44 @@ export function Workspace({
                       ? "Built from recent original posts through the official X API."
                       : "Built from writing samples provided by you."}
                   </p>
-                  <Button
-                    variant="secondary"
-                    className="mt-5 w-full"
-                    onClick={() => {
-                      setHandle("");
-                      setDisplayName("");
-                      setSamples("");
-                      setAuthorizationConfirmed(false);
-                      setShowProfileForm(true);
-                      setError("");
-                    }}
-                  >
-                    <Plus className="size-4" /> Add another voice
-                  </Button>
+                  {voiceNotice ? (
+                    <p role="status" className="mt-4 rounded-xl bg-accent-soft px-3 py-2 text-xs font-semibold text-forest-deep">
+                      {voiceNotice}
+                    </p>
+                  ) : null}
+                  <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setEditingVoice(true)}
+                    >
+                      <PencilLine className="size-4" /> Manage voice
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setHandle("");
+                        setDisplayName("");
+                        setSamples("");
+                        setAuthorizationConfirmed(false);
+                        setShowProfileForm(true);
+                        setError("");
+                      }}
+                    >
+                      <Plus className="size-4" /> Add voice
+                    </Button>
+                  </div>
                 </>
               )}
             </section>
           )}
+
+          {editingVoice && activeProfile ? (
+            <VoiceEditor
+              profile={activeProfile}
+              onClose={() => setEditingVoice(false)}
+              onUpdated={applyVoiceUpdate}
+            />
+          ) : null}
 
           <section className="rounded-3xl bg-forest p-5 text-white sm:p-6">
             <Sparkles className="size-5 text-accent" />

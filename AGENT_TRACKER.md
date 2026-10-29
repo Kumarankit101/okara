@@ -1,8 +1,8 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-30 04:54 IST
+Last updated: 2026-10-30 05:01 IST
 Coordinator: `/root`
-Status: Completed
+Status: In progress — T-821 Write-page voice management
 
 This file is the single source of truth for project execution. Only the coordinator edits it. Agents report structured completion results to the coordinator, who verifies evidence and records updates here.
 
@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-820 | Completed | 2026-10-30 04:54 IST | Live voice rename and curated-source editing workflow |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-821 | In progress | 2026-10-30 05:01 IST | Direct voice management from Write |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
 | A-AI | LLM generation and personalization engineer | Inherited primary model — requested Astra override unavailable | T-300 | Completed | 2026-10-29 12:06 IST | `src/lib/ai/**`, `src/lib/learning/**`; 19 focused tests passed |
@@ -145,6 +145,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-814 | Global preference retrieval and release | A-ROOT | Primary | T-811, T-812, T-813 | Completed | Retrieve Global+selected Voice memories, integrate, migrate, validate and deploy | 21 files/115 tests, lint/typecheck/build; migration aligned; READY deploy and authenticated desktop/mobile QA |
 | T-815 | Scope-only preference navigation | A-ROOT | Primary | T-814 | Completed | Remove All view; retain only Global and voice tabs with a useful populated default and scoped empty state | 6 focused component tests, full 21-file/115-test check, READY deploy and authenticated production QA |
 | T-820 | Editable voice profiles | A-ROOT | Primary | T-610, T-200, T-300 | Completed | Rename voices; add, edit, and remove curated source samples; atomically rebuild the style profile while preserving drafts and preferences | 22 files/121 tests, lint/typecheck/build pass; migration aligned; READY deploy and authenticated production QA without data mutation |
+| T-821 | Write-page voice management | A-ROOT | Primary | T-820 | In progress | Open the existing voice-management workflow for the active voice directly from Write and refresh its label after updates | Focused tests, full check, deploy and authenticated production QA pending |
 
 ## D. Dependency and execution plan
 
