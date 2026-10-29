@@ -31,7 +31,7 @@ Browser
 4. Receive exactly five distinct, editable drafts.
 5. Copy, save, select, like, dislike, or edit a draft.
 6. Reuse the workspace: ranked feedback memories influence only that user's future generations for that voice profile.
-7. Use Settings to update account details, review retention behavior, or delete a voice and its associated data.
+7. Use Settings to rename a voice, add/edit/remove its current source samples, rebuild its style analysis, or delete it and its associated data.
 8. Open any historical draft to restore its voice, brief, controls, latest edits, and full five-draft workspace.
 
 ## How the feedback loop learns

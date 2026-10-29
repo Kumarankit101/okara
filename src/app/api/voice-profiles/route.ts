@@ -1,5 +1,9 @@
 import { analyzeStyle, getOpenAIProvider } from "@/lib/ai";
-import { createVoiceProfileSchema, type StyleProfile } from "@/lib/contracts";
+import {
+  createVoiceProfileSchema,
+  updateVoiceProfileSchema,
+  type StyleProfile,
+} from "@/lib/contracts";
 import { getServerEnvironment } from "@/lib/env/server";
 import { apiError } from "@/lib/http/api-response";
 import { routeErrorResponse } from "@/lib/http/route-error";
@@ -33,10 +37,43 @@ function profileResponse(row: {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const user = await requireUser();
     const supabase = await createClient();
+    const requestedProfileId = new URL(request.url).searchParams.get("id");
+
+    if (requestedProfileId) {
+      const profileId = z.string().uuid().parse(requestedProfileId);
+      const [{ data: profile, error: profileError }, { data: samples, error: sampleError }] =
+        await Promise.all([
+          supabase
+            .from("voice_profiles")
+            .select("id,handle,display_name,source_type,status,last_synced_at,source_expires_at")
+            .eq("id", profileId)
+            .eq("user_id", user.id)
+            .neq("status", "deleted")
+            .maybeSingle(),
+          supabase
+            .from("source_posts")
+            .select("id,text")
+            .eq("voice_profile_id", profileId)
+            .eq("user_id", user.id)
+            .gt("expires_at", new Date().toISOString())
+            .order("source_order"),
+        ]);
+      if (profileError) throw profileError;
+      if (sampleError) throw sampleError;
+      if (!profile) {
+        return apiError(404, "VOICE_PROFILE_NOT_FOUND", "That voice profile no longer exists.");
+      }
+      return Response.json({
+        profile: profileResponse(profile),
+        samples: samples.map((sample) => ({ id: sample.id, text: sample.text })),
+        sourceExpiresAt: profile.source_expires_at,
+      });
+    }
+
     const { data, error } = await supabase
       .from("voice_profiles")
       .select("id,handle,display_name,source_type,status,last_synced_at")
@@ -45,6 +82,94 @@ export async function GET() {
       .order("updated_at", { ascending: false });
     if (error) throw error;
     return Response.json({ profiles: data.map(profileResponse) });
+  } catch (error) {
+    return routeErrorResponse(error);
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const user = await requireUser();
+    const input = updateVoiceProfileSchema.parse(await request.json());
+    const supabase = await createClient();
+    const { data: existing, error: existingError } = await supabase
+      .from("voice_profiles")
+      .select("id,handle,display_name,source_type,status,last_synced_at")
+      .eq("id", input.id)
+      .eq("user_id", user.id)
+      .neq("status", "deleted")
+      .maybeSingle();
+    if (existingError) throw existingError;
+    if (!existing) {
+      return apiError(404, "VOICE_PROFILE_NOT_FOUND", "That voice profile no longer exists.");
+    }
+
+    if (!input.samples) {
+      const { data: renamed, error } = await supabase
+        .from("voice_profiles")
+        .update({ display_name: input.displayName })
+        .eq("id", input.id)
+        .eq("user_id", user.id)
+        .select("id,handle,display_name,source_type,status,last_synced_at")
+        .maybeSingle();
+      if (error) throw error;
+      if (!renamed) {
+        return apiError(404, "VOICE_PROFILE_NOT_FOUND", "That voice profile no longer exists.");
+      }
+      return Response.json({ profile: profileResponse(renamed), rebuilt: false });
+    }
+
+    let posts: NormalizedSourcePost[];
+    try {
+      posts = normalizePastedSamples(input.samples);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("distinct")) {
+        return apiError(422, "INSUFFICIENT_SOURCE_MATERIAL", error.message);
+      }
+      throw error;
+    }
+    const styleResult = await analyzeStyle(
+      getOpenAIProvider(),
+      posts.map((post) => post.text),
+    );
+    const fetchedAt = new Date();
+    const expiresAt = sourceExpiresAt(fetchedAt);
+    const { data: replacement, error: replacementError } = await supabase.rpc(
+      "replace_voice_profile_samples",
+      {
+        p_voice_profile_id: input.id,
+        p_display_name: input.displayName,
+        p_style_profile: styleResult.data as unknown as Json,
+        p_samples: posts.map((post) => post.text) as unknown as Json,
+        p_fetched_at: fetchedAt.toISOString(),
+        p_expires_at: expiresAt,
+      },
+    );
+    if (replacementError) throw replacementError;
+    if (!replacement) {
+      return apiError(404, "VOICE_PROFILE_NOT_FOUND", "That voice profile no longer exists.");
+    }
+
+    void recordUsage({
+      userId: user.id,
+      provider: "openai",
+      operation: "style_reanalysis",
+      units: styleResult.usage?.totalTokens ?? 0,
+      estimatedCostUsd: 0,
+      requestId: styleResult.responseId,
+    });
+
+    return Response.json({
+      profile: profileResponse({
+        ...existing,
+        display_name: input.displayName,
+        status: "ready",
+        last_synced_at: fetchedAt.toISOString(),
+      }),
+      rebuilt: true,
+      sampleCount: posts.length,
+      sourceExpiresAt: expiresAt,
+    });
   } catch (error) {
     return routeErrorResponse(error);
   }

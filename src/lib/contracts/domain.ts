@@ -36,6 +36,25 @@ export type CreateVoiceProfileInput = z.infer<
   typeof createVoiceProfileSchema
 >;
 
+export const updateVoiceProfileSchema = z
+  .object({
+    id: z.string().uuid(),
+    displayName: z.string().trim().min(1).max(80),
+    samples: pastedSamplesSchema.optional(),
+    authorizationConfirmed: z.literal(true).optional(),
+  })
+  .superRefine((input, context) => {
+    if (input.samples && input.authorizationConfirmed !== true) {
+      context.addIssue({
+        code: "custom",
+        path: ["authorizationConfirmed"],
+        message: "Confirm that you are authorized to use these writing samples",
+      });
+    }
+  });
+
+export type UpdateVoiceProfileInput = z.infer<typeof updateVoiceProfileSchema>;
+
 export const styleProfileSchema = z.object({
   summary: z.string().min(1).max(1_500),
   sentenceLength: z.enum(["short", "mixed", "long"]),

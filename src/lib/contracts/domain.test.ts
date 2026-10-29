@@ -6,6 +6,7 @@ import {
   handleSchema,
   pastedSamplesSchema,
   profileSettingsSchema,
+  updateVoiceProfileSchema,
 } from "./domain";
 
 describe("shared domain contracts", () => {
@@ -19,6 +20,27 @@ describe("shared domain contracts", () => {
 
   it("requires exactly five generated drafts", () => {
     expect(() => generationOutputSchema.parse({ drafts: [] })).toThrow();
+  });
+
+  it("requires authorization only when voice source samples change", () => {
+    const base = {
+      id: "9b51f3d8-4c1e-4f34-8107-74b1983bd55c",
+      displayName: "Curated voice",
+    };
+    expect(updateVoiceProfileSchema.parse(base)).toEqual(base);
+    expect(() =>
+      updateVoiceProfileSchema.parse({
+        ...base,
+        samples: ["First long sample.", "Second long sample.", "Third long sample."],
+      }),
+    ).toThrow();
+    expect(
+      updateVoiceProfileSchema.parse({
+        ...base,
+        samples: ["First long sample.", "Second long sample.", "Third long sample."],
+        authorizationConfirmed: true,
+      }),
+    ).toMatchObject({ authorizationConfirmed: true });
   });
 
   it("normalizes and bounds a profile display name", () => {

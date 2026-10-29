@@ -60,6 +60,8 @@ export default async function SettingsPage() {
           memberSinceLabel={dateFormatter.format(new Date(user.created_at))}
           initialVoiceProfiles={(voiceProfiles ?? []).map((voiceProfile) => ({
             id: voiceProfile.id,
+            handle: voiceProfile.handle,
+            displayName: voiceProfile.display_name,
             name: voiceProfile.handle ? `@${voiceProfile.handle}` : voiceProfile.display_name,
             detail: voiceProfile.display_name,
             sourceLabel:

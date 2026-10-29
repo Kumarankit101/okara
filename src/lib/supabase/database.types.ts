@@ -537,6 +537,17 @@ export type Database = {
         };
         Returns: Json;
       };
+      replace_voice_profile_samples: {
+        Args: {
+          p_voice_profile_id: string;
+          p_display_name: string;
+          p_style_profile: Json;
+          p_samples: Json;
+          p_fetched_at: string;
+          p_expires_at: string;
+        };
+        Returns: Json;
+      };
       delete_expired_source_posts: {
         Args: Record<PropertyKey, never>;
         Returns: number;
