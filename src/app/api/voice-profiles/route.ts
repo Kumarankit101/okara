@@ -13,6 +13,7 @@ import {
   sourceExpiresAt,
   type NormalizedSourcePost,
 } from "@/lib/x";
+import { z } from "zod";
 
 function profileResponse(row: {
   id: string;
@@ -173,6 +174,33 @@ export async function POST(request: Request) {
       { profile: profileResponse(profile), styleProfile: styleResult.data satisfies StyleProfile },
       { status: 201 },
     );
+  } catch (error) {
+    return routeErrorResponse(error);
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const user = await requireUser();
+    const profileId = z
+      .string()
+      .uuid()
+      .parse(new URL(request.url).searchParams.get("id"));
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("voice_profiles")
+      .delete()
+      .eq("id", profileId)
+      .eq("user_id", user.id)
+      .select("id")
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) {
+      return apiError(404, "VOICE_PROFILE_NOT_FOUND", "That voice profile no longer exists.");
+    }
+
+    return Response.json({ deleted: true, id: data.id });
   } catch (error) {
     return routeErrorResponse(error);
   }

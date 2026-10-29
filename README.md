@@ -31,6 +31,7 @@ Browser
 4. Receive exactly five distinct, editable drafts.
 5. Copy, save, select, like, dislike, or edit a draft.
 6. Reuse the workspace: ranked feedback memories influence only that user's future generations for that voice profile.
+7. Use Settings to update account details, review retention behavior, or delete a voice and its associated data.
 
 ## Local setup
 

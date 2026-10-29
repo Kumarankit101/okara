@@ -7,6 +7,7 @@ const navigation = [
   { href: "/dashboard", label: "Write", icon: PenLine },
   { href: "/history", label: "History", icon: History },
   { href: "/memory", label: "Memory", icon: Sparkles },
+  { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -30,12 +31,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </nav>
           </div>
           <div className="mt-auto hidden space-y-1 lg:block">
-            <Link
-              href="/settings"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-muted hover:bg-ink/5 hover:text-ink"
-            >
-              <Settings2 className="size-4" /> Settings
-            </Link>
             <form action="/auth/signout" method="post">
               <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-muted hover:bg-ink/5 hover:text-ink">
                 <LogOut className="size-4" /> Sign out

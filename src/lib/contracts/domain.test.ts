@@ -4,6 +4,7 @@ import {
   generationOutputSchema,
   handleSchema,
   pastedSamplesSchema,
+  profileSettingsSchema,
 } from "./domain";
 
 describe("shared domain contracts", () => {
@@ -17,5 +18,15 @@ describe("shared domain contracts", () => {
 
   it("requires exactly five generated drafts", () => {
     expect(() => generationOutputSchema.parse({ drafts: [] })).toThrow();
+  });
+
+  it("normalizes and bounds a profile display name", () => {
+    expect(profileSettingsSchema.parse({ displayName: "  Ankit  " })).toEqual({
+      displayName: "Ankit",
+    });
+    expect(() => profileSettingsSchema.parse({ displayName: "" })).toThrow();
+    expect(() =>
+      profileSettingsSchema.parse({ displayName: "a".repeat(81) }),
+    ).toThrow();
   });
 });

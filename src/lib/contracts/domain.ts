@@ -141,3 +141,13 @@ export const apiErrorSchema = z.object({
 });
 
 export type ApiError = z.infer<typeof apiErrorSchema>;
+
+export const profileSettingsSchema = z.object({
+  displayName: z
+    .string()
+    .trim()
+    .min(1, "Enter a display name")
+    .max(80, "Display name must be 80 characters or fewer"),
+});
+
+export type ProfileSettingsInput = z.infer<typeof profileSettingsSchema>;

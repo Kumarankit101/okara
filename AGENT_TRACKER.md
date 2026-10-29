@@ -115,6 +115,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-520 | Authorization and retry UX | A-UX | Primary | T-500 review | Completed | Explicit consent, working add-voice flow, stable UUID request key | Lint/typecheck/diff pass; browser QA pending authenticated environment |
 | T-530 | Generation/feedback API hardening | A-API | Primary | T-500 review | Completed | Safe replay, quotas, verified persistence | Full check passed; residual transaction/concurrency caveats tracked |
 | T-600 | GitHub, Supabase, Vercel, README, delivery | A-ROOT | Primary | T-500 | Completed | Private repo, production Supabase, live Vercel app, README | Public pages 200; protected APIs 401 unauthenticated; deploy READY |
+| T-610 | Settings route and account/data controls | A-ROOT | Primary | T-100, T-400 | Completed | Account details, voice deletion, privacy links, sign-out, responsive navigation | Lint/typecheck/build; 11 files/62 tests; Playwright verified protected route reaches sign-in instead of 404 |
 
 ## D. Dependency and execution plan
 
@@ -214,6 +215,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-29 12:29 | Vercel Hobby rejected hourly cron; moved the job to Supabase Cron and verified `okara-delete-expired-source-posts` is active on `0 * * * *`. |
 | 2026-10-29 12:33 | Fixed cross-platform install by making the macOS Rolldown binding optional; full check passed again with 10 files and 60 tests. |
 | 2026-10-29 12:36 | Configured production auth URLs and deployed READY to `https://okara-eight.vercel.app`; public and unauthenticated protection smoke tests passed. |
+| 2026-10-29 12:45 | Replaced the broken Settings link with a real protected route, account update API, cascade-backed voice deletion, data-retention guidance, and session controls. Local build and 62 tests passed; browser validation confirmed the route redirects unauthenticated users to sign-in rather than returning 404. |
 
 ## Standard agent completion report contract
 
