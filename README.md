@@ -32,6 +32,7 @@ Browser
 5. Copy, save, select, like, dislike, or edit a draft.
 6. Reuse the workspace: ranked feedback memories influence only that user's future generations for that voice profile.
 7. Use Settings to update account details, review retention behavior, or delete a voice and its associated data.
+8. Open any historical draft to restore its voice, brief, controls, latest edits, and full five-draft workspace.
 
 ## Local setup
 

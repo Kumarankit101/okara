@@ -19,6 +19,7 @@ import { checkGenerationQuota } from "@/lib/services/generation-quota";
 import { recordUsage } from "@/lib/services/usage";
 import { requireUser, type Json } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/server";
+import { z } from "zod";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -28,6 +29,54 @@ interface ExistingRun {
   brief: string;
   constraints_json: Json;
   status: "pending" | "completed" | "failed";
+}
+
+interface DraftRow {
+  id: string;
+  generation_run_id: string;
+  text: string;
+  angle: string;
+  character_count: number;
+  style_note: string;
+}
+
+interface FeedbackRow {
+  draft_id: string;
+  event_type: string;
+  edited_text: string | null;
+  created_at: string;
+}
+
+function presentDraft(draft: DraftRow, feedback: FeedbackRow[]) {
+  const draftFeedback = feedback.filter((event) => event.draft_id === draft.id);
+  const latestEditedText = draftFeedback.find((event) => event.edited_text)?.edited_text;
+
+  return {
+    id: draft.id,
+    text: latestEditedText ?? draft.text,
+    angle: draft.angle,
+    characterCount: Array.from(latestEditedText ?? draft.text).length,
+    styleNote: draft.style_note,
+    safetyFlags: [],
+    isSaved: draftFeedback.some((event) => event.event_type === "saved"),
+    isSelected: draftFeedback.some((event) => event.event_type === "selected"),
+  };
+}
+
+async function loadDraftFeedback(
+  supabase: SupabaseClient,
+  userId: string,
+  draftIds: string[],
+): Promise<FeedbackRow[]> {
+  if (!draftIds.length) return [];
+  const { data, error } = await supabase
+    .from("feedback_events")
+    .select("draft_id,event_type,edited_text,created_at")
+    .eq("user_id", userId)
+    .in("draft_id", draftIds)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data;
 }
 
 async function findExistingRun(
@@ -123,13 +172,78 @@ function memoryKind(kind: string): PreferenceMemoryKind {
     : "preference";
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const user = await requireUser();
     const supabase = await createClient();
+    const requestedRunId = new URL(request.url).searchParams.get("runId");
+
+    if (requestedRunId) {
+      const runId = z.string().uuid().parse(requestedRunId);
+      const { data: run, error: runError } = await supabase
+        .from("generation_runs")
+        .select("id,brief,created_at,voice_profile_id,constraints_json")
+        .eq("id", runId)
+        .eq("user_id", user.id)
+        .eq("status", "completed")
+        .maybeSingle();
+      if (runError) throw runError;
+      if (!run) {
+        return apiError(404, "GENERATION_NOT_FOUND", "That generation no longer exists.");
+      }
+
+      const [{ data: drafts, error: draftError }, { data: profile, error: profileError }] =
+        await Promise.all([
+          supabase
+            .from("drafts")
+            .select("id,generation_run_id,text,angle,character_count,style_note")
+            .eq("user_id", user.id)
+            .eq("generation_run_id", run.id)
+            .order("position"),
+          supabase
+            .from("voice_profiles")
+            .select("id,display_name,handle")
+            .eq("id", run.voice_profile_id)
+            .eq("user_id", user.id)
+            .maybeSingle(),
+        ]);
+      if (draftError) throw draftError;
+      if (profileError) throw profileError;
+      if (!profile) {
+        return apiError(404, "VOICE_PROFILE_NOT_FOUND", "The voice for this generation was deleted.");
+      }
+
+      const feedback = await loadDraftFeedback(
+        supabase,
+        user.id,
+        drafts.map((draft) => draft.id),
+      );
+      const restoredRequest = generationRequestSchema.safeParse(run.constraints_json);
+      const constraints = restoredRequest.success
+        ? restoredRequest.data
+        : {
+            voiceProfileId: run.voice_profile_id,
+            brief: run.brief,
+            objective: "engage" as const,
+            toneIntensity: 3,
+            characterLimit: 280,
+            includeHashtags: false,
+          };
+
+      return Response.json({
+        run: {
+          id: run.id,
+          createdAt: run.created_at,
+          profileName: profile.handle ? `@${profile.handle}` : profile.display_name,
+          ...constraints,
+          drafts: drafts.map((draft) => presentDraft(draft, feedback)),
+        },
+      });
+    }
+
     const { data: runs, error } = await supabase
       .from("generation_runs")
-      .select("id,brief,created_at,voice_profile_id")
+      .select("id,brief,created_at,voice_profile_id,constraints_json")
       .eq("user_id", user.id)
       .eq("status", "completed")
       .order("created_at", { ascending: false })
@@ -143,7 +257,7 @@ export async function GET() {
       await Promise.all([
         supabase
           .from("drafts")
-          .select("id,generation_run_id,text,angle")
+          .select("id,generation_run_id,text,angle,character_count,style_note")
           .in("generation_run_id", runIds)
           .order("position"),
         supabase
@@ -153,6 +267,11 @@ export async function GET() {
       ]);
     if (draftError) throw draftError;
     if (profileError) throw profileError;
+    const feedback = await loadDraftFeedback(
+      supabase,
+      user.id,
+      drafts.map((draft) => draft.id),
+    );
 
     return Response.json({
       runs: runs.map((run) => {
@@ -162,7 +281,9 @@ export async function GET() {
           brief: run.brief,
           createdAt: run.created_at,
           profileName: profile?.handle ? `@${profile.handle}` : profile?.display_name ?? "Voice",
-          drafts: drafts.filter((draft) => draft.generation_run_id === run.id),
+          drafts: drafts
+            .filter((draft) => draft.generation_run_id === run.id)
+            .map((draft) => presentDraft(draft, feedback)),
         };
       }),
     });

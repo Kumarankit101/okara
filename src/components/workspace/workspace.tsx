@@ -10,6 +10,8 @@ import {
   RefreshCw,
   Sparkles,
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -25,7 +27,28 @@ interface VoiceProfileSummary {
 
 type SourceMode = "x_api" | "pasted";
 
-export function Workspace() {
+interface RestoredGeneration {
+  id: string;
+  createdAt: string;
+  profileName: string;
+  voiceProfileId: string;
+  brief: string;
+  objective: "engage" | "educate" | "announce" | "persuade" | "entertain";
+  toneIntensity: number;
+  characterLimit: number;
+  includeHashtags: boolean;
+  correction?: string;
+  drafts: DraftRecord[];
+}
+
+export function Workspace({
+  restoredRunId,
+  highlightedDraftId,
+}: {
+  restoredRunId?: string;
+  highlightedDraftId?: string;
+}) {
+  const router = useRouter();
   const [profiles, setProfiles] = useState<VoiceProfileSummary[]>([]);
   const [activeProfileId, setActiveProfileId] = useState("");
   const [sourceMode, setSourceMode] = useState<SourceMode>("pasted");
@@ -36,9 +59,14 @@ export function Workspace() {
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [brief, setBrief] = useState("");
   const [objective, setObjective] = useState("engage");
+  const [toneIntensity, setToneIntensity] = useState(3);
   const [characterLimit, setCharacterLimit] = useState(280);
+  const [includeHashtags, setIncludeHashtags] = useState(false);
+  const [correction, setCorrection] = useState("");
   const [drafts, setDrafts] = useState<DraftRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [restoringRun, setRestoringRun] = useState(Boolean(restoredRunId));
+  const [restoredAt, setRestoredAt] = useState<string | null>(null);
   const [profilesLoading, setProfilesLoading] = useState(true);
   const [error, setError] = useState("");
   const generationInFlight = useRef(false);
@@ -73,6 +101,64 @@ export function Workspace() {
     }
     void loadProfiles();
   }, []);
+
+  useEffect(() => {
+    if (!restoredRunId) return;
+
+    let cancelled = false;
+    async function restoreGeneration() {
+      await Promise.resolve();
+      if (cancelled) return;
+      setRestoringRun(true);
+      setError("");
+      try {
+        const response = await fetch(
+          `/api/generations?runId=${encodeURIComponent(restoredRunId!)}`,
+          { cache: "no-store" },
+        );
+        const payload = (await response.json()) as {
+          run?: RestoredGeneration;
+          error?: { message?: string };
+        };
+        if (!response.ok || !payload.run) {
+          throw new Error(payload.error?.message ?? "Could not restore that generation.");
+        }
+        if (cancelled) return;
+        setActiveProfileId(payload.run.voiceProfileId);
+        setBrief(payload.run.brief);
+        setObjective(payload.run.objective);
+        setToneIntensity(payload.run.toneIntensity);
+        setCharacterLimit(payload.run.characterLimit);
+        setIncludeHashtags(payload.run.includeHashtags);
+        setCorrection(payload.run.correction ?? "");
+        setDrafts(payload.run.drafts);
+        setRestoredAt(payload.run.createdAt);
+        generationAttempt.current = null;
+      } catch (caught) {
+        if (!cancelled) {
+          setError(
+            caught instanceof Error ? caught.message : "Could not restore that generation.",
+          );
+        }
+      } finally {
+        if (!cancelled) setRestoringRun(false);
+      }
+    }
+    void restoreGeneration();
+    return () => {
+      cancelled = true;
+    };
+  }, [restoredRunId]);
+
+  useEffect(() => {
+    if (!highlightedDraftId || restoringRun || !drafts.length) return;
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .getElementById(`draft-${highlightedDraftId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [drafts, highlightedDraftId, restoringRun]);
 
   async function createProfile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -133,9 +219,10 @@ export function Workspace() {
       voiceProfileId: activeProfileId,
       brief,
       objective,
-      toneIntensity: 3,
+      toneIntensity,
       characterLimit,
-      includeHashtags: false,
+      includeHashtags,
+      correction: correction.trim() || undefined,
     };
     const fingerprint = JSON.stringify(requestBody);
     const idempotencyKey =
@@ -147,6 +234,8 @@ export function Workspace() {
     setLoading(true);
     setError("");
     setDrafts([]);
+    setRestoredAt(null);
+    if (restoredRunId) router.replace("/dashboard", { scroll: false });
     try {
       const response = await fetch("/api/generations", {
         method: "POST",
@@ -384,6 +473,16 @@ export function Workspace() {
                 placeholder="Share the point, useful facts, audience, and desired outcome. The clearer the brief, the better the drafts."
                 className="mt-3 min-h-36 w-full resize-y bg-transparent text-lg leading-8 outline-none placeholder:text-muted/45"
               />
+              <span className="mt-4 block text-xs font-semibold text-muted">
+                Refinement note <span className="font-normal">(optional)</span>
+              </span>
+              <input
+                value={correction}
+                onChange={(event) => setCorrection(event.target.value)}
+                maxLength={1000}
+                placeholder="For example: make the opening less promotional"
+                className="mt-2 min-h-10 w-full rounded-xl border bg-white px-3 text-sm outline-none focus:border-forest"
+              />
             </label>
             <div className="mt-5 flex flex-col gap-4 border-t border-line pt-5 sm:flex-row sm:items-center">
               <label className="flex items-center gap-2 text-xs font-semibold text-muted">
@@ -401,6 +500,20 @@ export function Workspace() {
                 </select>
               </label>
               <label className="flex items-center gap-2 text-xs font-semibold text-muted">
+                Tone
+                <select
+                  value={toneIntensity}
+                  onChange={(event) => setToneIntensity(Number(event.target.value))}
+                  className="rounded-full border border-line bg-white px-3 py-2 text-xs text-ink outline-none"
+                >
+                  <option value={1}>Subtle</option>
+                  <option value={2}>Measured</option>
+                  <option value={3}>Balanced</option>
+                  <option value={4}>Strong</option>
+                  <option value={5}>Bold</option>
+                </select>
+              </label>
+              <label className="flex items-center gap-2 text-xs font-semibold text-muted">
                 Limit
                 <select
                   value={characterLimit}
@@ -412,14 +525,41 @@ export function Workspace() {
                   <option value={500}>500 chars</option>
                 </select>
               </label>
-              <Button className="sm:ml-auto" type="submit" disabled={loading || !activeProfileId}>
+              <label className="flex items-center gap-2 text-xs font-semibold text-muted">
+                <input
+                  type="checkbox"
+                  checked={includeHashtags}
+                  onChange={(event) => setIncludeHashtags(event.target.checked)}
+                  className="size-4 accent-forest"
+                />
+                Hashtags
+              </label>
+              <Button
+                className="sm:ml-auto"
+                type="submit"
+                disabled={loading || restoringRun || !activeProfileId}
+              >
                 {loading ? <LoaderCircle className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
                 Generate five drafts
               </Button>
             </div>
           </form>
 
-          {loading && !drafts.length ? (
+          {restoredAt ? (
+            <div className="mt-6 flex flex-col justify-between gap-2 rounded-2xl border border-forest/20 bg-accent-soft px-4 py-3 text-sm sm:flex-row sm:items-center">
+              <p className="font-semibold text-forest-deep">
+                Restored from history ·{" "}
+                {new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(
+                  new Date(restoredAt),
+                )}
+              </p>
+              <Link href="/history" className="font-bold text-forest underline">
+                Back to history
+              </Link>
+            </div>
+          ) : null}
+
+          {(loading || restoringRun) && !drafts.length ? (
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
               {[0, 1, 2, 3].map((item) => (
                 <div key={item} className="h-64 animate-pulse rounded-3xl border border-line bg-surface" />
@@ -429,7 +569,15 @@ export function Workspace() {
             <div className="mt-6">
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-sm font-semibold">Five angles, ready to refine</p>
-                <Button variant="ghost" className="min-h-9 px-3 text-xs" onClick={() => setDrafts([])}>
+                <Button
+                  variant="ghost"
+                  className="min-h-9 px-3 text-xs"
+                  onClick={() => {
+                    setDrafts([]);
+                    setRestoredAt(null);
+                    if (restoredRunId) router.replace("/dashboard", { scroll: false });
+                  }}
+                >
                   <RefreshCw className="size-3.5" /> Clear
                 </Button>
               </div>
@@ -440,6 +588,7 @@ export function Workspace() {
                     draft={draft}
                     characterLimit={characterLimit}
                     onFeedback={sendFeedback}
+                    highlighted={draft.id === highlightedDraftId}
                   />
                 ))}
               </div>

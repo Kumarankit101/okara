@@ -15,15 +15,19 @@ import type { GeneratedDraft } from "@/lib/contracts";
 
 export interface DraftRecord extends GeneratedDraft {
   id: string;
+  isSaved?: boolean;
+  isSelected?: boolean;
 }
 
 export function DraftCard({
   draft,
   characterLimit,
   onFeedback,
+  highlighted = false,
 }: {
   draft: DraftRecord;
   characterLimit: number;
+  highlighted?: boolean;
   onFeedback: (
     draftId: string,
     eventType: string,
@@ -32,8 +36,8 @@ export function DraftCard({
   ) => Promise<void>;
 }) {
   const [text, setText] = useState(draft.text);
-  const [saved, setSaved] = useState(false);
-  const [selected, setSelected] = useState(false);
+  const [saved, setSaved] = useState(Boolean(draft.isSaved));
+  const [selected, setSelected] = useState(Boolean(draft.isSelected));
   const [showReasons, setShowReasons] = useState(false);
   const count = Array.from(text).length;
 
@@ -44,8 +48,11 @@ export function DraftCard({
 
   return (
     <article
-      className={`rounded-3xl border bg-surface p-5 transition sm:p-6 ${
-        selected ? "border-forest ring-4 ring-accent/25" : "border-line"
+      id={`draft-${draft.id}`}
+      className={`scroll-mt-6 rounded-3xl border bg-surface p-5 transition sm:p-6 ${
+        selected || highlighted
+          ? "border-forest ring-4 ring-accent/30"
+          : "border-line"
       }`}
     >
       <header className="flex items-center justify-between gap-3">
