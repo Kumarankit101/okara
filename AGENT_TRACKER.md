@@ -1,8 +1,8 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-30 05:12 IST
+Last updated: 2026-10-30 05:17 IST
 Coordinator: `/root`
-Status: In progress — T-822 voice selector synchronization
+Status: Completed
 
 This file is the single source of truth for project execution. Only the coordinator edits it. Agents report structured completion results to the coordinator, who verifies evidence and records updates here.
 
@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-822 integration | In progress | 2026-10-30 05:12 IST | Voice selector synchronization review, integration and release |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-822 integration | Completed | 2026-10-30 05:17 IST | Voice selector synchronization review, integration and release |
 | A-VSYNC | Write selector synchronization implementer | Available default agent at low reasoning — requested Luna and Sol models were unavailable | T-822 implementation | Completed | 2026-10-30 05:13 IST | Add-voice sentinel, shared transitions and focused tests |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
@@ -147,7 +147,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-815 | Scope-only preference navigation | A-ROOT | Primary | T-814 | Completed | Remove All view; retain only Global and voice tabs with a useful populated default and scoped empty state | 6 focused component tests, full 21-file/115-test check, READY deploy and authenticated production QA |
 | T-820 | Editable voice profiles | A-ROOT | Primary | T-610, T-200, T-300 | Completed | Rename voices; add, edit, and remove curated source samples; atomically rebuild the style profile while preserving drafts and preferences | 22 files/121 tests, lint/typecheck/build pass; migration aligned; READY deploy and authenticated production QA without data mutation |
 | T-821 | Write-page voice management | A-ROOT | Primary | T-820 | Completed | Open the voice-management workflow for the active voice directly from Write and refresh its label after updates | 24 files/123 tests, lint/typecheck/build pass; READY deploy and authenticated production QA without data mutation |
-| T-822 | Synchronize Add voice and active selector | A-VSYNC with A-ROOT review | Available default agent at low reasoning | T-821 | In progress | Keep the header selector, add form and selected active-voice card in one state; selecting an existing voice exits add mode | 25 files/125 tests, lint/typecheck/build pass; deploy and authenticated production QA pending |
+| T-822 | Synchronize Add voice and active selector | A-VSYNC with A-ROOT review | Available default agent at low reasoning | T-821 | Completed | Keep the header selector, add form and selected active-voice card in one state; selecting an existing voice exits add mode | 25 files/125 tests, lint/typecheck/build pass; READY deploy and authenticated production transition QA |
 
 ## D. Dependency and execution plan
 
@@ -246,6 +246,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 - The preference-scope migration is applied in production. Authenticated production QA verified scope badges, filters, enabled Move/Copy controls, responsive mobile layout and a clean console without mutating live preference data.
 - Voice profiles can now be renamed or rebuilt from a curated set of added, edited, and removed samples. Rebuilding increments the style profile in place and atomically replaces short-lived samples, preserving the voice ID, drafts, history, feedback and scoped preferences.
 - The active voice on Write now exposes direct Manage voice and Add voice actions. Rename/rebuild results update the active label in place so users remain in their drafting workflow.
+- Add voice is now an explicit selector state. The card action and dropdown share the same reset transition, while choosing an existing voice exits add mode and restores that voice’s UI.
 
 ### Pending
 
@@ -306,6 +307,8 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-30 04:51 | Started T-820 and completed local integration: Settings voice editor, rename-only path, curated add/edit/remove workflow, one-call style reanalysis, and atomic owned-source replacement. Full check passed with 22 test files/121 tests; migration `20261030000300_editable_voice_profiles.sql` applied to production Supabase. |
 | 2026-10-30 04:54 | T-820 deployed in commit `c1f091a`; Vercel reached READY at the production alias. Authenticated production QA opened the editor for a real voice, verified three current samples plus add/edit/remove controls and safe close behavior, then closed without mutating account data. |
 | 2026-10-30 05:05 | T-821 deployed in commit `378e17f`. Authenticated production QA verified Manage voice on Write, loaded the active voice’s three samples in the right-side editor, visually checked the layout, and closed without mutating live data. Full validation passed with 24 test files/123 tests. |
+| 2026-10-30 05:13 | T-822 delegation requested the user-preferred lower-cost Luna model, then Sol; both were rejected by project entitlements before work ran. The available default agent completed the bounded task at low reasoning, and the coordinator independently reviewed every change. |
+| 2026-10-30 05:17 | T-822 deployed in commit `c1b11b1`. Authenticated production QA verified existing voice → Add voice form/selected option → different existing voice/restored card, with no profile creation or data mutation. Full validation passed with 25 test files/125 tests. |
 
 ## Standard agent completion report contract
 
