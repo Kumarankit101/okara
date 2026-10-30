@@ -1,6 +1,6 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-30 05:34 IST
+Last updated: 2026-10-30 05:35 IST
 Coordinator: `/root`
 Status: Completed
 
@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-825 product architecture document | Completed | 2026-10-30 05:34 IST | Product flow, system architecture, prompt construction, feedback learning, ranking, trade-offs and scale path |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-826 concise product decision memo | Completed | 2026-10-30 05:35 IST | Short choice/alternative/rationale document with essential prompt and feedback evidence |
 | A-VSYNC | Write selector synchronization implementer | Available default agent at low reasoning — requested Luna and Sol models were unavailable | T-822 implementation | Completed | 2026-10-30 05:13 IST | Add-voice sentinel, shared transitions and focused tests |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
@@ -151,6 +151,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-823 | Responsive authenticated navigation | A-ROOT | Primary | T-822 | Completed | Preserve the current shell/components while adding partial-prefetch loading UI, active-route state and immediate pending feedback | 26 test files/127 tests, lint, typecheck and production build; READY deploy; throttled and normal authenticated navigation QA passed |
 | T-824 | Short architecture README | A-ROOT | Primary | T-823 | Completed | Concise evaluator-facing explanation of product, architecture, decisions, learning loop, setup and deployment | Markdown reviewed; links and commands verified against the repository; diff check passed |
 | T-825 | Product architecture and learning-loop README | A-ROOT | Primary | T-824 | Completed | `PRODUCT_README.md` explaining the implemented voice pipeline, prompt design, atomic feedback loop, ranking formula, data model, controls and trade-offs | Claims cross-checked against prompt, generation, learning, feedback RPC and schema implementation; Markdown diff check passed |
+| T-826 | Condense product README around decisions | A-ROOT | Primary | T-825 | Completed | Replace long system narrative with a concise decision memo focused on choices, alternatives and rationale | Reduced from 380 to 179 lines; retained prompt precedence, feedback semantics, ranking formula and honest scale boundary; diff check passed |
 
 ## D. Dependency and execution plan
 
@@ -317,6 +318,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-30 05:20 | T-823 deployed in commit `a0c58da`; Vercel reached READY at the production alias. Authenticated Chrome QA showed the loading shell within about 340 ms under simulated slow networking, normal History/Preferences shells within about 260–280 ms, correct `aria-current` state, successful data completion and no warning/error console logs. |
 | 2026-10-30 05:30 | T-824 completed: condensed the README to an 80-line evaluator-facing guide covering the architecture, decision rationale, bounded learning loop, local setup, validation and production deployment. |
 | 2026-10-30 05:34 | T-825 completed: added `PRODUCT_README.md` with three architecture/flow diagrams, the actual prompt shape and precedence, action-to-memory semantics, exact deterministic ranking formula, database responsibilities, cost/security controls, trade-offs and an honest scale path. Reduced the root README to a 10-line product landing page. |
+| 2026-10-30 05:35 | T-826 completed: condensed `PRODUCT_README.md` from 380 to 179 lines and centered it on a choice/alternatives/rationale table, retaining only the essential proof of prompt construction, feedback learning, memory ranking, controls and future scale gates. |
 
 ## Standard agent completion report contract
 
