@@ -1,6 +1,6 @@
 # AGENT_TRACKER
 
-Last updated: 2026-10-30 05:30 IST
+Last updated: 2026-10-30 05:34 IST
 Coordinator: `/root`
 Status: Completed
 
@@ -91,7 +91,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 
 | Agent ID | Role | Model | Current task | Status | Last update | Deliverables |
 |---|---|---|---|---|---|---|
-| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-824 evaluator README | Completed | 2026-10-30 05:30 IST | Concise architecture, decision rationale, learning loop, setup and deployment guide |
+| A-ROOT | Coordinator, architecture, UI, integration, deployment | Inherited primary model; high-reasoning coordinator role | T-825 product architecture document | Completed | 2026-10-30 05:34 IST | Product flow, system architecture, prompt construction, feedback learning, ranking, trade-offs and scale path |
 | A-VSYNC | Write selector synchronization implementer | Available default agent at low reasoning — requested Luna and Sol models were unavailable | T-822 implementation | Completed | 2026-10-30 05:13 IST | Add-voice sentinel, shared transitions and focused tests |
 | A-DATA | Auth, Postgres schema, RLS specialist | Inherited primary model — requested Astra/Sol overrides unavailable | T-100 | Completed | 2026-10-29 12:07 IST | `supabase/**`, `src/lib/supabase/**`, auth routes/proxy; build passed |
 | A-X | X ingestion and source normalization engineer | Inherited primary model — requested Sol override unavailable | T-200 | Completed | 2026-10-29 12:05 IST | `src/lib/x/**`; 18 focused tests passed |
@@ -150,6 +150,7 @@ Server Components render authenticated data. Route Handlers own X/OpenAI provide
 | T-822 | Synchronize Add voice and active selector | A-VSYNC with A-ROOT review | Available default agent at low reasoning | T-821 | Completed | Keep the header selector, add form and selected active-voice card in one state; selecting an existing voice exits add mode | 25 files/125 tests, lint/typecheck/build pass; READY deploy and authenticated production transition QA |
 | T-823 | Responsive authenticated navigation | A-ROOT | Primary | T-822 | Completed | Preserve the current shell/components while adding partial-prefetch loading UI, active-route state and immediate pending feedback | 26 test files/127 tests, lint, typecheck and production build; READY deploy; throttled and normal authenticated navigation QA passed |
 | T-824 | Short architecture README | A-ROOT | Primary | T-823 | Completed | Concise evaluator-facing explanation of product, architecture, decisions, learning loop, setup and deployment | Markdown reviewed; links and commands verified against the repository; diff check passed |
+| T-825 | Product architecture and learning-loop README | A-ROOT | Primary | T-824 | Completed | `PRODUCT_README.md` explaining the implemented voice pipeline, prompt design, atomic feedback loop, ranking formula, data model, controls and trade-offs | Claims cross-checked against prompt, generation, learning, feedback RPC and schema implementation; Markdown diff check passed |
 
 ## D. Dependency and execution plan
 
@@ -213,7 +214,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | R-006 | Cross-user data leakage | A-DATA | Forced RLS and ownership checks; all eight production tables verified with forced RLS and four ownership policies each | Mitigated and remotely verified |
 | R-007 | Model output is malformed or unsafe | A-AI | Structured Outputs, Zod revalidation, factuality instructions, refusal/error handling | Mitigated; live structured smoke passed |
 | R-008 | Supabase CLI keychain access unavailable | A-ROOT | Used scoped, expiring token and authenticated CLI/dashboard flow; no login-keychain password required | Resolved |
-| R-009 | Feedback writes are not transactional and quota checks are not atomic | A-ROOT | Fail visibly now; add Postgres RPC transactions and atomic quota reservations before high volume | Open scale gate; not MVP blocker |
+| R-009 | Generation quota checks are not atomic reservations | A-ROOT | Add atomic quota reservations before high volume; feedback writes are already handled by the transactional `apply_feedback_v2` RPC | Open scale gate; not MVP blocker |
 | R-010 | Supabase built-in SMTP only delivers test emails to organization members and has a low hourly limit | A-ROOT | Configure a custom SMTP provider before public signup; code maps delivery/rate failures to safe actionable errors | Open production launch blocker for arbitrary email addresses |
 
 | R-011 | Feedback v2 changes live persisted behavior and requires a safe backfill | A-FDATA/A-ROOT | Additive migration, deterministic latest-event backfill, stable memory keys, remote verification before app rollout | Mitigated; migration applied and new tables verified remotely |
@@ -315,6 +316,7 @@ T-010 -> T-100 -> T-400 -> T-500 -> T-600. Authentication and schema integration
 | 2026-10-30 05:18 | Started T-823 after reading the bundled Next.js 16.4 navigation guidance. Added an authenticated-group `loading.tsx`, active-route styling, accessible per-link pending feedback and a top progress line while retaining default partial prefetching. Local validation passes with 26 test files/127 tests, lint, typecheck and production build. |
 | 2026-10-30 05:20 | T-823 deployed in commit `a0c58da`; Vercel reached READY at the production alias. Authenticated Chrome QA showed the loading shell within about 340 ms under simulated slow networking, normal History/Preferences shells within about 260–280 ms, correct `aria-current` state, successful data completion and no warning/error console logs. |
 | 2026-10-30 05:30 | T-824 completed: condensed the README to an 80-line evaluator-facing guide covering the architecture, decision rationale, bounded learning loop, local setup, validation and production deployment. |
+| 2026-10-30 05:34 | T-825 completed: added `PRODUCT_README.md` with three architecture/flow diagrams, the actual prompt shape and precedence, action-to-memory semantics, exact deterministic ranking formula, database responsibilities, cost/security controls, trade-offs and an honest scale path. Reduced the root README to a 10-line product landing page. |
 
 ## Standard agent completion report contract
 
